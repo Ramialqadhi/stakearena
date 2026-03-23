@@ -25,6 +25,7 @@ interface ChallengeCardProps {
   createdAt: Date | string;
   shareCode?: string;
   showAccept?: boolean;
+  currentUserId?: string;
 }
 
 export function ChallengeCard({
@@ -36,6 +37,7 @@ export function ChallengeCard({
   createdAt,
   shareCode,
   showAccept = true,
+  currentUserId,
 }: ChallengeCardProps) {
   const gameInfo = SUPPORTED_GAMES.find((g) => g.id === game || g.name === game);
   const gameId   = gameInfo?.id ?? game;
@@ -90,13 +92,19 @@ export function ChallengeCard({
         </div>
       </div>
 
-      {/* Accept button */}
-      {showAccept && status === "PENDING" && (
-        <Link href={joinHref} className="w-full">
-          <Button variant="primary" size="sm" className="w-full font-bold">
-            Accept Challenge
-          </Button>
-        </Link>
+      {/* Accept button or "Your Challenge" label */}
+      {status === "PENDING" && (
+        currentUserId === creator.id ? (
+          <div className="w-full text-center text-xs font-semibold text-[#6b7280] border border-[#2a2a3a] rounded-lg py-2 bg-[rgba(255,255,255,0.02)]">
+            Your Challenge · Waiting for opponent
+          </div>
+        ) : showAccept ? (
+          <Link href={joinHref} className="w-full">
+            <Button variant="primary" size="sm" className="w-full font-bold">
+              Accept Challenge
+            </Button>
+          </Link>
+        ) : null
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
 import { ChallengeCard } from "@/components/challenges/ChallengeCard";
@@ -28,6 +29,8 @@ type Challenge = {
 };
 
 export default function ChallengesPage() {
+  const { data: session } = useSession();
+  const currentUserId = (session?.user as any)?.id as string | undefined;
   const router = useRouter();
   const searchParams = useSearchParams();
   const gameFilter  = searchParams.get("game")  ?? "";
@@ -185,6 +188,7 @@ export default function ChallengesPage() {
                 createdAt={new Date(challenge.createdAt)}
                 shareCode={challenge.shareCode}
                 showAccept={true}
+                currentUserId={currentUserId}
               />
             ))}
           </div>

@@ -24,7 +24,7 @@ export function CancelChallengeButton({ challengeId }: { challengeId: string }) 
         return;
       }
       await update({});
-      router.refresh();
+      router.push("/challenges");
     } catch {
       setError("Something went wrong. Please try again.");
     } finally {
