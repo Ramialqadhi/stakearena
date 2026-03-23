@@ -1,26 +1,251 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0f;
+  --foreground: #f0f0f5;
+  --neon-green: #00ff88;
+  --purple: #8b5cf6;
+  --card-bg: #12121a;
+  --border: #1e1e2e;
+  --muted: #6b7280;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-neon-green: var(--neon-green);
+  --color-purple-accent: var(--purple);
+  --color-card-bg: var(--card-bg);
+  --color-border-dark: var(--border);
+  --color-muted: var(--muted);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.glow-green {
+  box-shadow: 0 0 20px rgba(0, 255, 136, 0.3), 0 0 40px rgba(0, 255, 136, 0.1);
+}
+
+.glow-purple {
+  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3), 0 0 40px rgba(139, 92, 246, 0.1);
+}
+
+.gradient-text-green {
+  background: linear-gradient(135deg, #00ff88 0%, #00cc6a 50%, #00ffaa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-purple {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.gradient-text-hero {
+  background: linear-gradient(135deg, #00ff88 0%, #8b5cf6 60%, #00ffaa 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass {
+  background: rgba(18, 18, 26, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid #1e1e2e;
+}
+
+.glass-hover:hover {
+  background: rgba(30, 30, 46, 0.9);
+  border-color: rgba(0, 255, 136, 0.3);
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.4), 0 0 40px rgba(0, 255, 136, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.6), 0 0 60px rgba(0, 255, 136, 0.3);
+  }
+}
+
+.btn-pulse {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+@keyframes radar-ring {
+  0% {
+    transform: scale(1);
+    opacity: 0.65;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+/* Searching: scale heartbeat + multi-layer green glow bleeding outward */
+@keyframes orb-breathe {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow:
+      inset 0 0 18px rgba(0, 255, 136, 0.12),
+      0 0 10px  3px  #00ff88,
+      0 0 30px  8px  #00cc66,
+      0 0 65px  16px #004d26,
+      0 0 120px 26px rgba(0, 40, 20, 0.4);
+  }
+  50% {
+    transform: scale(1.13);
+    box-shadow:
+      inset 0 0 28px rgba(0, 255, 136, 0.22),
+      0 0 20px  6px  #00ff88,
+      0 0 55px  16px #00cc66,
+      0 0 105px 28px #004d26,
+      0 0 180px 44px rgba(0, 40, 20, 0.5);
+  }
+}
+
+.orb-breathe {
+  animation: orb-breathe 2s ease-in-out infinite;
+}
+
+/* Matched: strong steady multi-layer pulse */
+@keyframes orb-matched {
+  0%, 100% {
+    box-shadow:
+      inset 0 0 22px rgba(0, 255, 136, 0.18),
+      0 0 14px  4px  #00ff88,
+      0 0 40px  10px #00cc66,
+      0 0 80px  20px #004d26,
+      0 0 140px 32px rgba(0, 40, 20, 0.4);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 36px rgba(0, 255, 136, 0.3),
+      0 0 26px  8px  #00ff88,
+      0 0 70px  18px #00cc66,
+      0 0 130px 34px #004d26,
+      0 0 220px 56px rgba(0, 40, 20, 0.5);
+  }
+}
+
+.orb-matched {
+  animation: orb-matched 1.6s ease-in-out infinite;
+}
+
+.radar-ring {
+  animation: radar-ring 2.4s ease-out infinite;
+}
+
+/* Page-scale orb — rings grow from orb size up to ~2.4× within a clipped container */
+@keyframes radar-ring-page {
+  0%   { transform: scale(1);   opacity: 0.55; }
+  100% { transform: scale(2.4); opacity: 0; }
+}
+.radar-ring-page {
+  animation: radar-ring-page 2.6s ease-out infinite;
+}
+
+/* Rotating dashed ring */
+@keyframes ring-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.ring-spin-slow {
+  animation: ring-spin 9s linear infinite;
+}
+.ring-spin-fast {
+  animation: ring-spin 1.4s linear infinite;
+}
+
+/* Single idle ping */
+@keyframes idle-ping {
+  0%   { transform: scale(1);   opacity: 0.5; }
+  100% { transform: scale(1.9); opacity: 0; }
+}
+.idle-ping {
+  animation: idle-ping 2.8s ease-out infinite;
+}
+
+/* Search pings */
+@keyframes search-ping {
+  0%   { transform: scale(1);   opacity: 0.6; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+.search-ping {
+  animation: search-ping 2.2s ease-out infinite;
+}
+
+/* Idle: soft multi-layer green glow, no scale */
+@keyframes orb-idle-glow {
+  0%, 100% {
+    box-shadow:
+      inset 0 0 12px rgba(0, 255, 136, 0.08),
+      0 0 8px   2px  #00ff88,
+      0 0 22px  6px  #00cc66,
+      0 0 50px  12px #004d26,
+      0 0 95px  20px rgba(0, 40, 20, 0.3);
+  }
+  50% {
+    box-shadow:
+      inset 0 0 20px rgba(0, 255, 136, 0.14),
+      0 0 14px  4px  #00ff88,
+      0 0 38px  10px #00cc66,
+      0 0 78px  18px #004d26,
+      0 0 140px 30px rgba(0, 40, 20, 0.4);
+  }
+}
+.orb-idle-glow {
+  animation: orb-idle-glow 3s ease-in-out infinite;
+}
+
+.hero-bg {
+  background:
+    radial-gradient(ellipse at 20% 50%, rgba(0, 255, 136, 0.05) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 20%, rgba(139, 92, 246, 0.08) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(0, 255, 136, 0.03) 0%, transparent 50%),
+    #0a0a0f;
+}
+
+.grid-pattern {
+  background-image:
+    linear-gradient(rgba(30, 30, 46, 0.5) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(30, 30, 46, 0.5) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--neon-green);
 }
