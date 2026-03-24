@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { SessionProvider } from "next-auth/react";
 import { PlayerCounter } from "@/components/layout/PlayerCounter";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -19,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${inter.className} bg-[#0a0a0f] text-[#f0f0f5] antialiased`}>
-        <SessionProvider>{children}</SessionProvider>
+        {children}
         <PlayerCounter />
       </body>
     </html>

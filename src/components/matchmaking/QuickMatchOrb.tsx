@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/hooks/useSession";
 import { useRouter } from "next/navigation";
 import { SUPPORTED_GAMES } from "@/types";
 import { RecordingNoticeModal } from "@/components/challenges/RecordingNoticeModal";

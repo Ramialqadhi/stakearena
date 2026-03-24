@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Mail, Lock, User, ArrowRight, Loader2 } from "lucide-react";
@@ -56,13 +55,13 @@ export default function RegisterPage() {
       }
 
       // Auto sign-in after registration
-      const result = await signIn("credentials", {
-        email,
-        password,
-        redirect: false,
+      const loginRes = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
       });
 
-      if (result?.error) {
+      if (!loginRes.ok) {
         setError("Account created but sign-in failed. Please sign in manually.");
         router.push("/login");
       } else {

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useSession } from "next-auth/react";
+import { useSession } from "@/hooks/useSession";
 import Link from "next/link";
 import { CheckCircle, Wallet, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/Button";

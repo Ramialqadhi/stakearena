@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { useSession, signOut } from "@/hooks/useSession";
 import { Button } from "@/components/ui/Button";
 import { Wallet, ChevronDown, LogOut, LayoutDashboard, ShieldCheck, Zap, Gamepad2 } from "lucide-react";
 import { Logo } from "@/components/layout/Logo";
