@@ -1,0 +1,173 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                 String              @id @default(cuid())
+  email              String              @unique
+  username           String              @unique
+  password           String
+  avatar             String?
+  balance            Float               @default(0)
+  totalWins          Int                 @default(0)
+  totalLosses        Int                 @default(0)
+  totalEarnings      Float               @default(0)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  isAdmin            Boolean             @default(false)
+  ghostStrikes       Int                 @default(0)
+  suspendedUntil     DateTime?
+  gameCredentials    String? // JSON: {"clash-royale":"#ABC","chess":"user"}
+  challengesCreated  Challenge[]         @relation("ChallengeCreator")
+  challengesOpponent Challenge[]         @relation("ChallengeOpponent")
+  wonChallenges      Challenge[]         @relation("ChallengeWinner")
+  chatMessages       ChatMessage[]
+  evidence           Evidence[]
+  matches            Match[]
+  transactions       Transaction[]
+  withdrawalRequests WithdrawalRequest[]
+  matchmakingQueues  MatchmakingQueue[]
+}
+
+model Challenge {
+  id                        String          @id @default(cuid())
+  creatorId                 String
+  opponentId                String?
+  game                      String
+  stakeAmount               Float
+  status                    ChallengeStatus @default(PENDING)
+  winnerId                  String?
+  creatorPaid               Boolean         @default(false)
+  opponentPaid              Boolean         @default(false)
+  shareCode                 String          @unique @default(cuid())
+  notes                     String?
+  createdAt                 DateTime        @default(now())
+  updatedAt                 DateTime        @updatedAt
+  startedAt                 DateTime?
+  isMatchmaking             Boolean         @default(false)
+  creatorCredentials        String?
+  opponentCredentials       String?
+  reminderSentAt            DateTime?
+  creatorReady              Boolean         @default(false)
+  opponentReady             Boolean         @default(false)
+  readyAt                   DateTime?
+  readyDeadline             DateTime?
+  readyReminderSentAt       DateTime?
+  readyUrgentReminderSentAt DateTime?
+  creator                   User            @relation("ChallengeCreator", fields: [creatorId], references: [id])
+  opponent                  User?           @relation("ChallengeOpponent", fields: [opponentId], references: [id])
+  winner                    User?           @relation("ChallengeWinner", fields: [winnerId], references: [id])
+  chatMessages              ChatMessage[]
+  evidence                  Evidence[]
+  match                     Match?
+  transactions              Transaction[]
+}
+
+model ChatMessage {
+  id          String    @id @default(cuid())
+  challengeId String
+  userId      String
+  message     String
+  createdAt   DateTime  @default(now())
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+model Transaction {
+  id              String            @id @default(cuid())
+  userId          String
+  type            TransactionType
+  amount          Float
+  status          TransactionStatus @default(PENDING)
+  challengeId     String?
+  description     String?
+  createdAt       DateTime          @default(now())
+  stripeSessionId String?           @unique
+  challenge       Challenge?        @relation(fields: [challengeId], references: [id])
+  user            User              @relation(fields: [userId], references: [id])
+}
+
+model Match {
+  id            String    @id @default(cuid())
+  challengeId   String    @unique
+  confirmedById String
+  creatorScore  String?
+  opponentScore String?
+  notes         String?
+  confirmedAt   DateTime  @default(now())
+  challenge     Challenge @relation(fields: [challengeId], references: [id])
+  confirmedBy   User      @relation(fields: [confirmedById], references: [id])
+}
+
+model Evidence {
+  id          String    @id @default(cuid())
+  challengeId String
+  userId      String
+  fileUrl     String
+  fileType    String
+  description String?
+  createdAt   DateTime  @default(now())
+  challenge   Challenge @relation(fields: [challengeId], references: [id])
+  user        User      @relation(fields: [userId], references: [id])
+}
+
+model WithdrawalRequest {
+  id        String            @id @default(cuid())
+  userId    String
+  amount    Float
+  method    String
+  account   String
+  status    TransactionStatus @default(PENDING)
+  adminNote String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+  user      User              @relation(fields: [userId], references: [id])
+}
+
+model MatchmakingQueue {
+  id          String      @id @default(cuid())
+  userId      String
+  game        String
+  stakeAmount Float
+  credentials String
+  status      QueueStatus @default(WAITING)
+  createdAt   DateTime    @default(now())
+  expiresAt   DateTime
+  challengeId String?
+  user        User        @relation(fields: [userId], references: [id])
+}
+
+enum QueueStatus {
+  WAITING
+  MATCHED
+  CANCELLED
+  EXPIRED
+}
+
+enum ChallengeStatus {
+  PENDING
+  WAITING_FOR_READY
+  ACTIVE
+  COMPLETED
+  CANCELLED
+  DISPUTED
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  STAKE
+  PAYOUT
+  RAKE
+}
+
+enum TransactionStatus {
+  PENDING
+  COMPLETED
+  FAILED
+}
