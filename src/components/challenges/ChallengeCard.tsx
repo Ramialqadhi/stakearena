@@ -95,9 +95,11 @@ export function ChallengeCard({
       {/* Accept button or "Your Challenge" label */}
       {status === "PENDING" && (
         currentUserId === creator.id ? (
-          <div className="w-full text-center text-xs font-semibold text-[#6b7280] border border-[#2a2a3a] rounded-lg py-2 bg-[rgba(255,255,255,0.02)]">
-            Your Challenge · Waiting for opponent
-          </div>
+          <Link href={`/challenges/${id}`} className="w-full">
+            <div className="w-full text-center text-xs font-semibold text-[#6b7280] border border-[#2a2a3a] rounded-lg py-2 bg-[rgba(255,255,255,0.02)] hover:border-[#3a3a4a] hover:bg-[rgba(255,255,255,0.04)] transition-colors cursor-pointer">
+              Your Challenge · View &amp; Cancel →
+            </div>
+          </Link>
         ) : showAccept ? (
           <Link href={joinHref} className="w-full">
             <Button variant="primary" size="sm" className="w-full font-bold">

@@ -82,6 +82,7 @@ export async function POST(request: NextRequest) {
         userId: { not: session.user.id },
       },
       orderBy: { createdAt: "asc" },
+      include: { user: { select: { username: true } } },
     });
 
     if (opponent) {
@@ -141,10 +142,14 @@ export async function POST(request: NextRequest) {
           },
         });
 
-        return challenge;
+          return challenge;
       });
 
-      return NextResponse.json({ matched: true, challengeId: result.id });
+      return NextResponse.json({
+        matched:          true,
+        challengeId:      result.id,
+        opponentUsername: opponent.user.username,
+      });
     }
 
     // No opponent found — enter queue

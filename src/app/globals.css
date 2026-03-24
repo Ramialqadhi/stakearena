@@ -233,6 +233,35 @@ body {
   background-size: 40px 40px;
 }
 
+/* ── Match Found overlay animations ────────────────────────────── */
+@keyframes match-overlay-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes match-slam-in {
+  0%   { transform: scale(0.05); opacity: 0; }
+  60%  { transform: scale(1.1);  opacity: 1; }
+  80%  { transform: scale(0.97); }
+  100% { transform: scale(1);    opacity: 1; }
+}
+
+@keyframes match-slide-left {
+  from { transform: translateX(-90px); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
+@keyframes match-slide-right {
+  from { transform: translateX(90px); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+@keyframes match-vs-appear {
+  0%   { transform: scale(0.2) rotate(-15deg); opacity: 0; }
+  65%  { transform: scale(1.25) rotate(3deg);  opacity: 1; }
+  100% { transform: scale(1) rotate(0deg);     opacity: 1; }
+}
+
 ::-webkit-scrollbar {
   width: 6px;
 }

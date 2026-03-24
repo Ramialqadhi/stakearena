@@ -10,7 +10,6 @@ import { GameIcon } from "@/components/games/GameIcon";
 import { Swords, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
-import { QuickMatchPanel } from "@/components/matchmaking/QuickMatchPanel";
 
 type Challenge = {
   id: string;
@@ -70,17 +69,6 @@ export default function ChallengesPage() {
       <Navbar />
 
       <main className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
-        {/* Quick Match */}
-        <div className="mb-10">
-          <QuickMatchPanel />
-        </div>
-
-        {/* Divider */}
-        <div className="flex items-center gap-4 mb-8">
-          <div className="flex-1 h-px bg-[#1e1e2e]" />
-          <span className="text-xs font-semibold text-[#6b7280] uppercase tracking-widest">or browse open challenges</span>
-          <div className="flex-1 h-px bg-[#1e1e2e]" />
-        </div>
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">

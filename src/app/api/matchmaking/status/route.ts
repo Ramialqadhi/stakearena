@@ -22,10 +22,34 @@ export async function GET() {
     }
 
     if (entry.status === "MATCHED") {
-      return NextResponse.json({ status: "matched", challengeId: entry.challengeId });
+      if (!entry.challengeId) return NextResponse.json({ status: "idle" });
+
+      const challenge = await prisma.challenge.findUnique({
+        where: { id: entry.challengeId },
+        include: {
+          creator:  { select: { username: true } },
+          opponent: { select: { username: true } },
+        },
+      });
+
+      // Stale MATCHED entry — challenge is gone, completed, or cancelled.
+      // Return idle so the user isn't phantom-redirected to an old match.
+      if (!challenge || challenge.status !== "ACTIVE") {
+        return NextResponse.json({ status: "idle" });
+      }
+
+      const isCreator = challenge.creatorId === session.user.id;
+      const opponentUsername = isCreator
+        ? challenge.opponent?.username
+        : challenge.creator?.username;
+      return NextResponse.json({
+        status:           "matched",
+        challengeId:      entry.challengeId,
+        opponentUsername: opponentUsername ?? null,
+      });
     }
 
-    // WAITING — check for expiry
+    // WAITING — check for expiry first
     const now = new Date();
     if (entry.expiresAt < now) {
       await prisma.$transaction(async (tx) => {
@@ -39,6 +63,81 @@ export async function GET() {
         });
       });
       return NextResponse.json({ status: "expired" });
+    }
+
+    // WAITING — try to match with another waiting player (server-side matching)
+    // Both players already paid when they joined, so no balance changes here.
+    const matchOpponent = await prisma.matchmakingQueue.findFirst({
+      where: {
+        game:        entry.game,
+        stakeAmount: entry.stakeAmount,
+        status:      "WAITING",
+        expiresAt:   { gt: now },
+        userId:      { not: session.user.id },
+      },
+      orderBy: { createdAt: "asc" },
+      include: { user: { select: { username: true } } },
+    });
+
+    if (matchOpponent) {
+      try {
+        const challenge = await prisma.$transaction(async (tx) => {
+          // Create challenge first so we have an ID
+          const ch = await tx.challenge.create({
+            data: {
+              creatorId:           matchOpponent.userId,
+              opponentId:          session.user.id,
+              game:                entry.game,
+              stakeAmount:         entry.stakeAmount,
+              status:              "ACTIVE",
+              creatorPaid:         true,
+              opponentPaid:        true,
+              startedAt:           now,
+              isMatchmaking:       true,
+              creatorCredentials:  matchOpponent.credentials,
+              opponentCredentials: entry.credentials,
+            },
+          });
+
+          // Atomically claim the opponent entry — if they're no longer WAITING
+          // (another concurrent request already matched them), count will be 0
+          // and the transaction rolls back, including the challenge creation above.
+          const claimed = await tx.matchmakingQueue.updateMany({
+            where: { id: matchOpponent.id, status: "WAITING" },
+            data:  { status: "MATCHED", challengeId: ch.id },
+          });
+          if (claimed.count === 0) throw new Error("RACE_CONDITION");
+
+          // Mark self as matched
+          await tx.matchmakingQueue.update({
+            where: { id: entry.id },
+            data:  { status: "MATCHED", challengeId: ch.id },
+          });
+
+          // Link any pending queue-stake transactions (created without a challengeId
+          // when both players initially joined the waiting queue) to this challenge.
+          await tx.transaction.updateMany({
+            where: {
+              userId:      { in: [session.user.id, matchOpponent.userId] },
+              type:        "STAKE",
+              challengeId: null,
+              amount:      entry.stakeAmount,
+            },
+            data: { challengeId: ch.id },
+          });
+
+          return ch;
+        });
+
+        return NextResponse.json({
+          status:           "matched",
+          challengeId:      challenge.id,
+          opponentUsername: matchOpponent.user.username,
+        });
+      } catch (err: any) {
+        if (err.message !== "RACE_CONDITION") throw err;
+        // Another concurrent request matched this pair — fall through to "waiting"
+      }
     }
 
     return NextResponse.json({

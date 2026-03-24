@@ -4,7 +4,6 @@ import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { GameCard } from "@/components/games/GameCard";
-import { QuickMatchPanel } from "@/components/matchmaking/QuickMatchPanel";
 import { SUPPORTED_GAMES } from "@/types";
 import {
   Zap,
@@ -104,19 +103,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Quick Match Section */}
-      <section className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl md:text-4xl font-black text-[#f0f0f5] mb-3">
-            ⚡ Quick{" "}
-            <span className="gradient-text-green">Match</span>
-          </h2>
-          <p className="text-[#6b7280] text-base max-w-lg mx-auto">
-            Skip the wait. Get auto-matched with an opponent at the same stake — instantly.
-          </p>
-        </div>
-        <QuickMatchPanel />
-      </section>
 
       {/* Features Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20">

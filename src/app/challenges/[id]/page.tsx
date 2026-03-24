@@ -43,6 +43,7 @@ export default async function ChallengeDetailPage({
   const isOpponent  = challenge.opponentId === userId;
   const isParticipant = isCreator || isOpponent;
 
+
   if (!isParticipant) {
     // Non-participant: show read-only view
   }

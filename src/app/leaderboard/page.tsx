@@ -2,198 +2,387 @@ export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/prisma";
 import { Navbar } from "@/components/layout/Navbar";
-import { Trophy, Medal } from "lucide-react";
 
+/* ── helpers ──────────────────────────────────────────────────────── */
+function wr(wins: number, losses: number) {
+  const t = wins + losses;
+  return t > 0 ? Math.round((wins / t) * 100) : 0;
+}
+
+/* ── rank medal ───────────────────────────────────────────────────── */
+function RankBadge({ rank }: { rank: number }) {
+  if (rank === 1) return (
+    <div style={{
+      width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+      background: "linear-gradient(135deg, #fbbf24, #f59e0b)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      boxShadow: "0 0 12px rgba(251,191,36,0.6), 0 0 24px rgba(251,191,36,0.25)",
+      border: "1.5px solid rgba(251,191,36,0.8)",
+    }}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M2 7l4 10h12l4-10-6 4-4-7-4 7-6-4z" fill="#0a0a0f" strokeLinejoin="round"/>
+      </svg>
+    </div>
+  );
+  if (rank === 2) return (
+    <div style={{
+      width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+      background: "linear-gradient(135deg, #d1d5db, #9ca3af)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      boxShadow: "0 0 10px rgba(209,213,219,0.35)",
+      border: "1.5px solid rgba(209,213,219,0.6)",
+    }}>
+      <span style={{ fontSize: 14, fontWeight: 900, color: "#1a1a2a" }}>2</span>
+    </div>
+  );
+  if (rank === 3) return (
+    <div style={{
+      width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+      background: "linear-gradient(135deg, #cd7f32, #a0522d)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+      boxShadow: "0 0 10px rgba(205,127,50,0.35)",
+      border: "1.5px solid rgba(205,127,50,0.6)",
+    }}>
+      <span style={{ fontSize: 14, fontWeight: 900, color: "#1a1a2a" }}>3</span>
+    </div>
+  );
+  return (
+    <div style={{
+      width: 36, height: 36, borderRadius: "50%", flexShrink: 0,
+      background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)",
+      display: "flex", alignItems: "center", justifyContent: "center",
+    }}>
+      <span style={{ fontSize: 12, fontWeight: 700, color: "#6b7280" }}>#{rank}</span>
+    </div>
+  );
+}
+
+/* ── win-rate bar ─────────────────────────────────────────────────── */
+function WinRateBar({ rate, rank }: { rate: number; rank: number }) {
+  const color = rank === 1 ? "#00ff88" : rank === 2 ? "#d1d5db" : rank === 3 ? "#cd7f32" : "#00ff88";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{
+        flex: 1, height: 4, background: "rgba(255,255,255,0.06)", borderRadius: 2, overflow: "hidden",
+        minWidth: 48,
+      }}>
+        <div style={{
+          height: "100%", width: `${rate}%`,
+          background: color,
+          borderRadius: 2,
+          boxShadow: rank <= 3 ? `0 0 6px ${color}80` : "none",
+          transition: "width 0.6s ease",
+        }} />
+      </div>
+      <span style={{ fontSize: 12, fontWeight: 700, color, minWidth: 34, textAlign: "right" }}>
+        {rate}%
+      </span>
+    </div>
+  );
+}
+
+/* ── page ─────────────────────────────────────────────────────────── */
 export default async function LeaderboardPage() {
-  const users = await prisma.user.findMany({
-    orderBy: { totalEarnings: "desc" },
-    take: 20,
-    select: {
-      id: true,
-      username: true,
-      avatar: true,
-      totalWins: true,
-      totalLosses: true,
-      totalEarnings: true,
+  const [users, totalPlayers, completedAgg] = await Promise.all([
+    prisma.user.findMany({
+      orderBy: { totalEarnings: "desc" },
+      take: 20,
+      select: { id: true, username: true, totalWins: true, totalLosses: true, totalEarnings: true },
+    }),
+    prisma.user.count(),
+    prisma.challenge.aggregate({
+      where: { status: "COMPLETED" },
+      _count: { id: true },
+      _sum:   { stakeAmount: true },
+    }),
+  ]);
+
+  const totalMatches     = completedAgg._count.id;
+  const totalPrize       = ((completedAgg._sum.stakeAmount ?? 0) * 2 * 0.9);
+
+  const top3    = users.slice(0, 3);
+  const restList = users.slice(3);
+
+  // podium order: 2nd | 1st | 3rd
+  const podium = [top3[1], top3[0], top3[2]];
+  const podiumRanks = [2, 1, 3];
+
+  const podiumStyles: Record<number, {
+    border: string; glow: string; avatarBg: string; avatarColor: string;
+    labelColor: string; earningsColor: string; height: number; top: number;
+  }> = {
+    1: {
+      border: "1px solid rgba(0,255,136,0.5)",
+      glow: "0 0 30px rgba(0,255,136,0.18), 0 0 60px rgba(0,255,136,0.08)",
+      avatarBg: "linear-gradient(135deg, #00ff88, #00cc66)",
+      avatarColor: "#0a0a0f",
+      labelColor: "#00ff88",
+      earningsColor: "#00ff88",
+      height: 200, top: 0,
     },
-  });
+    2: {
+      border: "1px solid rgba(209,213,219,0.3)",
+      glow: "0 0 20px rgba(209,213,219,0.08)",
+      avatarBg: "linear-gradient(135deg, #d1d5db, #9ca3af)",
+      avatarColor: "#0a0a0f",
+      labelColor: "#d1d5db",
+      earningsColor: "#d1d5db",
+      height: 164, top: 36,
+    },
+    3: {
+      border: "1px solid rgba(205,127,50,0.3)",
+      glow: "0 0 20px rgba(205,127,50,0.08)",
+      avatarBg: "linear-gradient(135deg, #cd7f32, #a0522d)",
+      avatarColor: "#fff",
+      labelColor: "#cd7f32",
+      earningsColor: "#cd7f32",
+      height: 148, top: 52,
+    },
+  };
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#0a0a0f]">
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "#0a0a0f" }}>
       <Navbar />
 
-      <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 py-8">
-        {/* Header */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[rgba(251,191,36,0.15)] border border-[rgba(251,191,36,0.3)] mb-4">
-            <Trophy className="w-7 h-7 text-[#fbbf24]" />
+      <main style={{ flex: 1, maxWidth: 860, margin: "0 auto", width: "100%", padding: "40px 16px 60px" }}>
+
+        {/* ── Page header ── */}
+        <div style={{ textAlign: "center", marginBottom: 40 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            width: 64, height: 64, borderRadius: 20,
+            background: "rgba(0,255,136,0.08)",
+            border: "1px solid rgba(0,255,136,0.3)",
+            marginBottom: 16,
+            boxShadow: "0 0 24px rgba(0,255,136,0.15), 0 0 48px rgba(0,255,136,0.06)",
+          }}>
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" style={{ filter: "drop-shadow(0 0 8px rgba(0,255,136,0.8))" }}>
+              <path d="M6 2H18V9C18 12.3137 15.3137 15 12 15C8.68629 15 6 12.3137 6 9V2Z" fill="#00ff88" opacity="0.9"/>
+              <path d="M4 2H6V7C4.89543 7 4 6.10457 4 5V2Z" fill="#00ff88" opacity="0.5"/>
+              <path d="M18 2H20V5C20 6.10457 19.1046 7 18 7V2Z" fill="#00ff88" opacity="0.5"/>
+              <path d="M9 15V18M15 15V18M6 18H18" stroke="#00ff88" strokeWidth="1.5" strokeLinecap="round"/>
+              <path d="M8 21H16" stroke="#00ff88" strokeWidth="1.5" strokeLinecap="round"/>
+            </svg>
           </div>
-          <h1 className="text-3xl font-black text-[#f0f0f5] mb-2">Leaderboard</h1>
-          <p className="text-[#6b7280] text-sm">Top players ranked by total earnings</p>
+          <h1 style={{ fontSize: "clamp(1.8rem, 5vw, 2.8rem)", fontWeight: 900, color: "#f0f0f5", letterSpacing: "-0.03em", margin: "0 0 8px" }}>
+            Leaderboard
+          </h1>
+          <p style={{ fontSize: 14, color: "#6b7280", margin: 0 }}>
+            Top players ranked by total earnings
+          </p>
         </div>
 
-        {/* Top 3 podium */}
-        {users.length >= 3 && (
-          <div className="grid grid-cols-3 gap-3 mb-8">
-            {/* 2nd place */}
-            <div className="glass rounded-xl p-4 border border-[rgba(192,192,192,0.2)] text-center flex flex-col items-center gap-2 mt-6">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#c0c0c0] to-[#a0a0a0] flex items-center justify-center text-sm font-black text-[#0a0a0f]">
-                {users[1]?.username[0]?.toUpperCase()}
+        {/* ── Platform stats ── */}
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12,
+          marginBottom: 40,
+        }}>
+          {[
+            { label: "Total Players",   value: totalPlayers.toLocaleString(),           icon: "👥" },
+            { label: "Matches Played",  value: totalMatches.toLocaleString(),            icon: "⚔️" },
+            { label: "Prize Paid Out",  value: `$${totalPrize.toLocaleString("en-US", { maximumFractionDigits: 0 })}`, icon: "💰" },
+          ].map(stat => (
+            <div key={stat.label} style={{
+              background: "rgba(18,18,26,0.8)", border: "1px solid #1e1e2e",
+              borderRadius: 16, padding: "16px 12px", textAlign: "center",
+              backdropFilter: "blur(12px)",
+            }}>
+              <div style={{ fontSize: 22, marginBottom: 6 }}>{stat.icon}</div>
+              <div style={{ fontSize: "clamp(1.1rem, 3vw, 1.5rem)", fontWeight: 900, color: "#00ff88", letterSpacing: "-0.02em", lineHeight: 1 }}>
+                {stat.value}
               </div>
-              <div>
-                <div className="text-xs font-bold text-[#c0c0c0]">2nd</div>
-                <div className="text-sm font-bold text-[#f0f0f5] truncate max-w-[80px]">
-                  {users[1]?.username}
-                </div>
-                <div className="text-xs text-[#c0c0c0] font-semibold">
-                  ${users[1]?.totalEarnings.toFixed(0)}
-                </div>
+              <div style={{ fontSize: 11, color: "#6b7280", marginTop: 4, fontWeight: 600, letterSpacing: "0.06em", textTransform: "uppercase" }}>
+                {stat.label}
               </div>
             </div>
+          ))}
+        </div>
 
-            {/* 1st place */}
-            <div className="glass rounded-xl p-4 border border-[rgba(0,255,136,0.3)] glow-green text-center flex flex-col items-center gap-2">
-              <Medal className="w-6 h-6 text-[#fbbf24]" />
-              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#00ff88] to-[#8b5cf6] flex items-center justify-center text-sm font-black text-[#0a0a0f]">
-                {users[0]?.username[0]?.toUpperCase()}
-              </div>
-              <div>
-                <div className="text-xs font-bold text-[#00ff88]">1st Place</div>
-                <div className="text-sm font-bold text-[#f0f0f5] truncate max-w-[80px]">
-                  {users[0]?.username}
-                </div>
-                <div className="text-xs text-[#00ff88] font-bold">
-                  ${users[0]?.totalEarnings.toFixed(0)}
-                </div>
-              </div>
-            </div>
+        {/* ── Top 3 podium ── */}
+        {top3.length >= 1 && (
+          <div style={{
+            display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10,
+            marginBottom: 32, alignItems: "flex-end",
+          }}>
+            {podium.map((user, i) => {
+              if (!user) return <div key={i} />;
+              const rank = podiumRanks[i];
+              const s = podiumStyles[rank];
+              const rate = wr(user.totalWins, user.totalLosses);
+              const isFirst = rank === 1;
 
-            {/* 3rd place */}
-            <div className="glass rounded-xl p-4 border border-[rgba(205,127,50,0.2)] text-center flex flex-col items-center gap-2 mt-6">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#cd7f32] to-[#a0522d] flex items-center justify-center text-sm font-black text-[#0a0a0f]">
-                {users[2]?.username[0]?.toUpperCase()}
-              </div>
-              <div>
-                <div className="text-xs font-bold text-[#cd7f32]">3rd</div>
-                <div className="text-sm font-bold text-[#f0f0f5] truncate max-w-[80px]">
-                  {users[2]?.username}
+              return (
+                <div key={user.id} style={{
+                  background: "rgba(14,14,22,0.9)",
+                  border: s.border,
+                  borderRadius: 18,
+                  boxShadow: s.glow,
+                  padding: "20px 12px 16px",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+                  marginTop: s.top,
+                  backdropFilter: "blur(12px)",
+                  position: "relative",
+                }}>
+                  {/* crown for #1 */}
+                  {isFirst && (
+                    <div style={{ position: "absolute", top: -14, left: "50%", transform: "translateX(-50%)" }}>
+                      <svg width="28" height="20" viewBox="0 0 24 18" fill="none" style={{ filter: "drop-shadow(0 0 6px rgba(251,191,36,0.9))" }}>
+                        <path d="M2 16L5 5L9.5 10L12 2L14.5 10L19 5L22 16H2Z" fill="#fbbf24" stroke="#f59e0b" strokeWidth="0.5"/>
+                      </svg>
+                    </div>
+                  )}
+
+                  {/* rank label */}
+                  <span style={{
+                    fontSize: 10, fontWeight: 800, color: s.labelColor,
+                    letterSpacing: "0.14em", textTransform: "uppercase",
+                    background: `${s.labelColor}18`, padding: "2px 8px", borderRadius: 6,
+                    border: `1px solid ${s.labelColor}40`,
+                  }}>
+                    {rank === 1 ? "1st Place" : rank === 2 ? "2nd Place" : "3rd Place"}
+                  </span>
+
+                  {/* avatar */}
+                  <div style={{
+                    width: isFirst ? 64 : 52, height: isFirst ? 64 : 52,
+                    borderRadius: "50%", background: s.avatarBg,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    fontSize: isFirst ? 22 : 18, fontWeight: 900, color: s.avatarColor,
+                    boxShadow: `0 0 16px ${s.labelColor}50`,
+                    border: `2px solid ${s.labelColor}60`,
+                    flexShrink: 0,
+                  }}>
+                    {user.username[0]?.toUpperCase()}
+                  </div>
+
+                  {/* username */}
+                  <div style={{
+                    fontSize: isFirst ? 15 : 13, fontWeight: 800, color: "#f0f0f5",
+                    textAlign: "center", maxWidth: "100%",
+                    overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", width: "100%",
+                  }}>
+                    {user.username}
+                  </div>
+
+                  {/* earnings */}
+                  <div style={{
+                    fontSize: isFirst ? 17 : 15, fontWeight: 900, color: s.earningsColor,
+                    textShadow: isFirst ? `0 0 12px ${s.earningsColor}80` : "none",
+                  }}>
+                    ${user.totalEarnings.toFixed(0)}
+                  </div>
+
+                  {/* W/L */}
+                  <div style={{ fontSize: 11, color: "#6b7280", textAlign: "center" }}>
+                    <span style={{ color: "#00ff88", fontWeight: 700 }}>{user.totalWins}W</span>
+                    {" / "}
+                    <span style={{ color: "#ef4444", fontWeight: 700 }}>{user.totalLosses}L</span>
+                    {" · "}
+                    <span style={{ color: s.labelColor, fontWeight: 700 }}>{rate}%</span>
+                  </div>
                 </div>
-                <div className="text-xs text-[#cd7f32] font-semibold">
-                  ${users[2]?.totalEarnings.toFixed(0)}
-                </div>
-              </div>
-            </div>
+              );
+            })}
           </div>
         )}
 
-        {/* Full leaderboard table */}
-        <div className="glass rounded-xl border border-[#1e1e2e] overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[#1e1e2e]">
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-[#6b7280] uppercase tracking-wide w-12">
-                    Rank
-                  </th>
-                  <th className="text-left px-6 py-3 text-xs font-semibold text-[#6b7280] uppercase tracking-wide">
-                    Player
-                  </th>
-                  <th className="text-right px-6 py-3 text-xs font-semibold text-[#6b7280] uppercase tracking-wide">
-                    Wins
-                  </th>
-                  <th className="text-right px-6 py-3 text-xs font-semibold text-[#6b7280] uppercase tracking-wide">
-                    Losses
-                  </th>
-                  <th className="text-right px-6 py-3 text-xs font-semibold text-[#6b7280] uppercase tracking-wide">
-                    Win Rate
-                  </th>
-                  <th className="text-right px-6 py-3 text-xs font-semibold text-[#6b7280] uppercase tracking-wide">
-                    Earnings
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-[#6b7280] text-sm">
-                      No players ranked yet. Be the first to compete!
-                    </td>
-                  </tr>
-                ) : (
-                  users.map((user, index) => {
-                    const rank = index + 1;
-                    const totalGames = user.totalWins + user.totalLosses;
-                    const winRate =
-                      totalGames > 0
-                        ? Math.round((user.totalWins / totalGames) * 100)
-                        : 0;
+        {/* ── Full list (rank 4+) ── */}
+        {restList.length > 0 && (
+          <div style={{
+            background: "rgba(14,14,22,0.8)", border: "1px solid #1e1e2e",
+            borderRadius: 20, overflow: "hidden", backdropFilter: "blur(12px)",
+          }}>
+            {/* table header */}
+            <div style={{
+              display: "grid",
+              gridTemplateColumns: "52px 1fr 80px 80px 110px 100px",
+              padding: "10px 20px",
+              borderBottom: "1px solid #1e1e2e",
+              gap: 8,
+            }}>
+              {["Rank", "Player", "Wins", "Losses", "Win Rate", "Earnings"].map((h, i) => (
+                <div key={h} style={{
+                  fontSize: 10, fontWeight: 700, color: "#4b5563",
+                  letterSpacing: "0.1em", textTransform: "uppercase",
+                  textAlign: i >= 2 ? "right" : "left",
+                }}>
+                  {h}
+                </div>
+              ))}
+            </div>
 
-                    const rankColor =
-                      rank === 1
-                        ? "text-[#00ff88]"
-                        : rank === 2
-                        ? "text-[#c0c0c0]"
-                        : rank === 3
-                        ? "text-[#cd7f32]"
-                        : "text-[#6b7280]";
+            {restList.map((user, i) => {
+              const rank  = i + 4;
+              const rate  = wr(user.totalWins, user.totalLosses);
+              const isEven = i % 2 === 0;
 
-                    const rowClass =
-                      rank === 1
-                        ? "border-b border-[rgba(0,255,136,0.1)] bg-[rgba(0,255,136,0.03)]"
-                        : rank === 2
-                        ? "border-b border-[rgba(192,192,192,0.08)]"
-                        : rank === 3
-                        ? "border-b border-[rgba(205,127,50,0.08)]"
-                        : "border-b border-[#1a1a24] hover:bg-[rgba(255,255,255,0.01)] transition-colors";
+              return (
+                <div key={user.id} style={{
+                  display: "grid",
+                  gridTemplateColumns: "52px 1fr 80px 80px 110px 100px",
+                  padding: "12px 20px",
+                  gap: 8,
+                  alignItems: "center",
+                  background: isEven ? "transparent" : "rgba(255,255,255,0.012)",
+                  borderBottom: i < restList.length - 1 ? "1px solid rgba(255,255,255,0.04)" : "none",
+                  transition: "background 0.15s",
+                }}>
+                  {/* rank */}
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                    <RankBadge rank={rank} />
+                  </div>
 
-                    return (
-                      <tr key={user.id} className={rowClass}>
-                        <td className="px-6 py-4">
-                          <span className={`text-lg font-black ${rankColor}`}>
-                            {rank <= 3 ? ["🥇", "🥈", "🥉"][rank - 1] : `#${rank}`}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold"
-                              style={{
-                                background:
-                                  rank === 1
-                                    ? "linear-gradient(135deg, #00ff88, #8b5cf6)"
-                                    : "linear-gradient(135deg, #3a3a4a, #2a2a3a)",
-                                color: rank === 1 ? "#0a0a0f" : "#a1a1aa",
-                              }}
-                            >
-                              {user.username[0]?.toUpperCase()}
-                            </div>
-                            <span className={`font-semibold ${rank === 1 ? "text-[#00ff88]" : "text-[#f0f0f5]"}`}>
-                              {user.username}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 text-right text-sm font-semibold text-[#00ff88]">
-                          {user.totalWins}
-                        </td>
-                        <td className="px-6 py-4 text-right text-sm text-[#ef4444]">
-                          {user.totalLosses}
-                        </td>
-                        <td className="px-6 py-4 text-right text-sm text-[#a1a1aa]">
-                          {winRate}%
-                        </td>
-                        <td className="px-6 py-4 text-right">
-                          <span className={`font-bold ${rank === 1 ? "text-[#00ff88]" : "text-[#fbbf24]"}`}>
-                            ${user.totalEarnings.toFixed(2)}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+                  {/* player */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0 }}>
+                    <div style={{
+                      width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                      background: "linear-gradient(135deg, #2a2a3a, #1e1e2e)",
+                      border: "1px solid rgba(255,255,255,0.08)",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 13, fontWeight: 800, color: "#a1a1aa",
+                    }}>
+                      {user.username[0]?.toUpperCase()}
+                    </div>
+                    <span style={{
+                      fontSize: 14, fontWeight: 700, color: "#e0e0e8",
+                      overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                    }}>
+                      {user.username}
+                    </span>
+                  </div>
+
+                  {/* wins */}
+                  <div style={{ textAlign: "right", fontSize: 14, fontWeight: 700, color: "#00ff88" }}>
+                    {user.totalWins}
+                  </div>
+
+                  {/* losses */}
+                  <div style={{ textAlign: "right", fontSize: 14, fontWeight: 600, color: "#ef4444" }}>
+                    {user.totalLosses}
+                  </div>
+
+                  {/* win rate bar */}
+                  <div>
+                    <WinRateBar rate={rate} rank={rank} />
+                  </div>
+
+                  {/* earnings */}
+                  <div style={{ textAlign: "right", fontSize: 14, fontWeight: 800, color: "#fbbf24" }}>
+                    ${user.totalEarnings.toFixed(2)}
+                  </div>
+                </div>
+              );
+            })}
           </div>
-        </div>
+        )}
+
+        {users.length === 0 && (
+          <div style={{ textAlign: "center", padding: "60px 24px", color: "#4b5563" }}>
+            <div style={{ fontSize: 48, marginBottom: 12 }}>🏆</div>
+            <div style={{ fontSize: 16, fontWeight: 600 }}>No players ranked yet.</div>
+            <div style={{ fontSize: 14, marginTop: 6 }}>Be the first to compete and claim the top spot.</div>
+          </div>
+        )}
       </main>
     </div>
   );
