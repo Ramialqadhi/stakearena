@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { Users } from "lucide-react";
 
 export async function PlayerCounter() {
-  const count = await prisma.user.count();
+  const count = await prisma.user.count().catch(() => 0);
 
   return (
     <div className="fixed bottom-4 right-4 z-40 pointer-events-none">
