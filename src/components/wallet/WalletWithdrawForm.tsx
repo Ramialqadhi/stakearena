@@ -47,7 +47,7 @@ export function WalletWithdrawForm({ balance }: { balance: number }) {
       });
       const data = await res.json();
       if (!res.ok) { setError(data.error || "Failed to submit withdrawal."); return; }
-      await update({});
+      await update();
       router.refresh();
       setSuccess(true);
     } catch {

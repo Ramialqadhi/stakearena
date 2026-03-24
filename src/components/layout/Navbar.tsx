@@ -13,7 +13,7 @@ export function Navbar() {
 
   // Refresh balance from DB on every page mount so the JWT never shows stale balance
   useEffect(() => {
-    update({});
+    update();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

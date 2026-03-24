@@ -33,7 +33,7 @@ function NewChallengeContent() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
-    update({});
+    update();
     fetch("/api/user/dispute-block")
       .then((r) => r.json())
       .then((data) => setDisputeBlock(data))

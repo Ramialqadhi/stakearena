@@ -101,11 +101,11 @@ export function QuickMatchPanel({ fullPage = false }: { fullPage?: boolean }) {
         if (pollRef.current) clearInterval(pollRef.current);
         setMatchedId(data.challengeId);
         setStep("matched");
-        await update({});
+        await update();
         setTimeout(() => router.push(`/challenges/${data.challengeId}`), 1_500);
       } else if (data.status === "expired") {
         if (pollRef.current) clearInterval(pollRef.current);
-        await update({});
+        await update();
         setStep("expired");
       } else if (data.status === "idle") {
         if (pollRef.current) clearInterval(pollRef.current);
@@ -151,7 +151,7 @@ export function QuickMatchPanel({ fullPage = false }: { fullPage?: boolean }) {
         setStep("credentials");
         return;
       }
-      await update({});
+      await update();
       if (data.matched) {
         setMatchedId(data.challengeId);
         setStep("matched");
@@ -171,7 +171,7 @@ export function QuickMatchPanel({ fullPage = false }: { fullPage?: boolean }) {
   async function handleLeave() {
     try {
       await fetch("/api/matchmaking/leave", { method: "POST" });
-      await update({});
+      await update();
       fetchCounts();
     } catch { /* ignore */ }
     setStep("idle");

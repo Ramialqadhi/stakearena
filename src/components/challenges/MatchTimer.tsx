@@ -41,7 +41,7 @@ export function MatchTimer({
     try {
       const res = await fetch(`/api/challenges/${challengeId}/expire`, { method: "POST" });
       if (res.ok) {
-        await update({});
+        await update();
         router.refresh();
       }
     } catch {

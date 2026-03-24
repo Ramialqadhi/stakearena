@@ -43,7 +43,7 @@ export function PendingWithdrawals({ withdrawals }: { withdrawals: PendingWithdr
         return;
       }
       // Refresh session balance then reload page data
-      await update({});
+      await update();
       router.refresh();
     } catch {
       setError("Something went wrong. Please try again.");

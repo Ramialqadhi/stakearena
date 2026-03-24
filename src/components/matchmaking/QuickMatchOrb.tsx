@@ -150,11 +150,11 @@ export function QuickMatchOrb() {
         if (pollRef.current) clearInterval(pollRef.current);
         setMatchedId(d.challengeId);
         setPhase("matched");
-        await update({});
+        await update();
         setTimeout(() => router.push(`/challenges/${d.challengeId}`), 1_600);
       } else if (d.status === "expired") {
         if (pollRef.current) clearInterval(pollRef.current);
-        await update({});
+        await update();
         setPhase("expired");
       } else if (d.status === "idle") {
         if (pollRef.current) clearInterval(pollRef.current);
@@ -200,7 +200,7 @@ export function QuickMatchOrb() {
         setJoinError(data.error || "Failed to join.");
         return;
       }
-      await update({});
+      await update();
       if (data.matched) {
         setMatchedId(data.challengeId);
         setPhase("matched");
@@ -219,7 +219,7 @@ export function QuickMatchOrb() {
   async function leaveQueue() {
     try {
       await fetch("/api/matchmaking/leave", { method: "POST" });
-      await update({});
+      await update();
       fetchCounts();
     } catch { /* ignore */ }
     setPhase("idle");

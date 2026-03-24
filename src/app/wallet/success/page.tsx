@@ -17,7 +17,7 @@ export default function WalletSuccessPage() {
     // Poll until the JWT balance reflects the new deposit (webhook may take a moment)
     let attempts = 0;
     async function refresh() {
-      await update({});
+      await update();
       attempts++;
       if (attempts < 8) {
         setTimeout(refresh, 1500);

@@ -23,7 +23,7 @@ export function CancelChallengeButton({ challengeId }: { challengeId: string }) 
         setError(data.error || "Failed to cancel challenge.");
         return;
       }
-      await update({});
+      await update();
       router.push("/challenges");
     } catch {
       setError("Something went wrong. Please try again.");

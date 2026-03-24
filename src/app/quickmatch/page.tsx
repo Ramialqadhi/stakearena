@@ -456,11 +456,11 @@ export default function QuickMatchPage() {
         setMatchedId(d.challengeId);
         setOpponentUsername(d.opponentUsername ?? "Opponent");
         setPhase("matched");
-        await update({});
+        await update();
         setTimeout(() => router.push(`/challenges/${d.challengeId}`), 3000);
       } else if (d.status === "expired") {
         if (pollRef.current) clearInterval(pollRef.current);
-        await update({});
+        await update();
         setPhase("expired");
       } else if (d.status === "idle") {
         if (pollRef.current) clearInterval(pollRef.current);
@@ -488,7 +488,7 @@ export default function QuickMatchPage() {
         setMatchedId(d.challengeId);
         setOpponentUsername(d.opponentUsername ?? "Opponent");
         setPhase("matched");
-        update({}).then(() => {
+        update().then(() => {
           setTimeout(() => router.push(`/challenges/${d.challengeId}`), 3000);
         });
       }
@@ -512,7 +512,7 @@ export default function QuickMatchPage() {
         setError(data.error || "Failed to join queue.");
         return;
       }
-      await update({});
+      await update();
       if (data.matched) {
         setMatchedId(data.challengeId);
         setOpponentUsername(data.opponentUsername ?? "Opponent");
@@ -529,7 +529,7 @@ export default function QuickMatchPage() {
   }
 
   async function leaveQueue() {
-    try { await fetch("/api/matchmaking/leave", { method: "POST" }); await update({}); fetchCounts(); } catch { /**/ }
+    try { await fetch("/api/matchmaking/leave", { method: "POST" }); await update(); fetchCounts(); } catch { /**/ }
     setPhase("idle"); setExpiry(null); setError(""); setCredGate(false);
   }
 

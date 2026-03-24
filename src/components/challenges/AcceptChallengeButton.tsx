@@ -52,7 +52,7 @@ export function AcceptChallengeButton({
         setError(data.error || "Failed to accept challenge.");
         return;
       }
-      await update({});
+      await update();
       router.push(`/challenges/${challengeId}`);
       router.refresh();
     } catch {
