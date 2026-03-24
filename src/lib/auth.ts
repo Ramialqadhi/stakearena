@@ -31,13 +31,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token;
     },
     session({ session, token }) {
-      if (token) {
-        session.user.id       = (token.id       as string)  ?? "";
-        session.user.username = (token.username as string)  ?? "";
-        session.user.balance  = (token.balance  as number)  ?? 0;
-        session.user.isAdmin  = (token.isAdmin  as boolean) ?? false;
-      }
-      return session;
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id:       (token.id       as string)  ?? "",
+          username: (token.username as string)  ?? "",
+          balance:  (token.balance  as number)  ?? 0,
+          isAdmin:  (token.isAdmin  as boolean) ?? false,
+        },
+      };
     },
   },
   providers: [
@@ -54,7 +57,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         if (!user) return null;
         const valid = await bcrypt.compare(credentials.password as string, user.password);
         if (!valid) return null;
-        return user;
+        return { id: user.id, email: user.email, username: user.username, balance: user.balance };
       },
     }),
   ],
