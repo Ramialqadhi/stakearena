@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { normalizeTag } from "@/lib/clashroyale";
 
 export async function GET() {
   const session = await auth();
@@ -32,7 +33,8 @@ export async function POST(req: NextRequest) {
   });
 
   const existing = user?.gameCredentials ? JSON.parse(user.gameCredentials) : {};
-  const updated  = { ...existing, [game]: value.trim() };
+  const normalized = game === "CLASH_ROYALE" ? normalizeTag(value) : value.trim();
+  const updated  = { ...existing, [game]: normalized };
 
   await prisma.user.update({
     where: { id: session.user.id },
