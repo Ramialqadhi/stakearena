@@ -1,8 +1,8 @@
 const CR_API = "https://api.clashroyale.com/v1";
 
-/** Normalize a player tag: always uppercase, always starts with # */
+/** Normalize a player tag: always uppercase, always starts with #, no spaces */
 export function normalizeTag(tag: string): string {
-  const t = tag.trim().toUpperCase();
+  const t = tag.trim().replace(/\s+/g, "").toUpperCase();
   return t.startsWith("#") ? t : `#${t}`;
 }
 
@@ -41,18 +41,29 @@ export async function findBattleResult(
 
   const p1 = normalizeTag(playerTag1);
   const p2 = normalizeTag(playerTag2);
+  const url = `${CR_API}/players/${encodeTag(p1)}/battlelog`;
+
+  console.log(`[CR] findBattleResult: p1=${p1} p2=${p2} after=${afterTimestamp.toISOString()}`);
+  console.log(`[CR] Fetching: ${url}`);
 
   let battles: unknown[];
   try {
-    const res = await fetch(`${CR_API}/players/${encodeTag(p1)}/battlelog`, {
+    const res = await fetch(url, {
       headers: { Authorization: `Bearer ${apiKey}` },
       // Never cache — we always want fresh data
       cache: "no-store",
     });
-    if (!res.ok) return null;
+    console.log(`[CR] Response status: ${res.status}`);
+    if (!res.ok) {
+      const errText = await res.text();
+      console.log(`[CR] Error body: ${errText}`);
+      return null;
+    }
     const body = await res.json();
     battles = Array.isArray(body) ? body : (body.items ?? []);
-  } catch {
+    console.log(`[CR] Battles returned: ${battles.length}`);
+  } catch (err) {
+    console.log(`[CR] Fetch threw: ${err}`);
     return null;
   }
 
@@ -73,6 +84,8 @@ export async function findBattleResult(
     const teamTag = normalizeTag((team[0].tag as string) ?? "");
     const oppTag  = normalizeTag((opponent[0].tag as string) ?? "");
 
+    console.log(`[CR] Battle at ${battle.battleTime}: team=${teamTag} opp=${oppTag}`);
+
     // Must be between our two players
     const isMatch =
       (teamTag === p1 && oppTag === p2) ||
@@ -82,12 +95,19 @@ export async function findBattleResult(
     const teamCrowns = (team[0].crowns as number) ?? 0;
     const oppCrowns  = (opponent[0].crowns as number) ?? 0;
 
-    if (teamCrowns === oppCrowns) continue; // draw — keep polling
+    console.log(`[CR] Match found! teamCrowns=${teamCrowns} oppCrowns=${oppCrowns}`);
+
+    if (teamCrowns === oppCrowns) {
+      console.log(`[CR] Draw — continuing to poll`);
+      continue;
+    }
 
     const winnerTag = teamCrowns > oppCrowns ? teamTag : oppTag;
     const loserTag  = teamCrowns > oppCrowns ? oppTag  : teamTag;
+    console.log(`[CR] Winner: ${winnerTag} Loser: ${loserTag}`);
     return { winnerTag, loserTag };
   }
 
+  console.log(`[CR] No matching battle found`);
   return null;
 }
