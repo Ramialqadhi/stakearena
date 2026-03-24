@@ -44,13 +44,18 @@ export function Footer() {
               Platform
             </h4>
             <ul className="space-y-2">
-              {["Challenges", "Leaderboard", "Games", "Live Matches"].map((item) => (
-                <li key={item}>
+              {[
+                { label: "Challenges",   href: "/challenges"  },
+                { label: "Leaderboard",  href: "/leaderboard" },
+                { label: "Quick Match",  href: "/quickmatch"  },
+                { label: "How It Works", href: "/how-it-works"},
+              ].map(({ label, href }) => (
+                <li key={label}>
                   <Link
-                    href="#"
+                    href={href}
                     className="text-sm text-[#6b7280] hover:text-[#00ff88] transition-colors"
                   >
-                    {item}
+                    {label}
                   </Link>
                 </li>
               ))}
@@ -82,18 +87,21 @@ export function Footer() {
               Legal
             </h4>
             <ul className="space-y-2">
-              {["Terms of Service", "Privacy Policy", "Cookie Policy", "Responsible Gaming"].map(
-                (item) => (
-                  <li key={item}>
-                    <Link
-                      href="#"
-                      className="text-sm text-[#6b7280] hover:text-[#00ff88] transition-colors"
-                    >
-                      {item}
-                    </Link>
-                  </li>
-                )
-              )}
+              {[
+                { label: "Terms of Service",  href: "/terms"   },
+                { label: "Privacy Policy",    href: "/privacy" },
+                { label: "Cookie Policy",     href: "#"        },
+                { label: "Responsible Gaming",href: "#"        },
+              ].map(({ label, href }) => (
+                <li key={label}>
+                  <Link
+                    href={href}
+                    className="text-sm text-[#6b7280] hover:text-[#00ff88] transition-colors"
+                  >
+                    {label}
+                  </Link>
+                </li>
+              ))}
             </ul>
           </div>
         </div>

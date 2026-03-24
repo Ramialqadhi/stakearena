@@ -7,15 +7,17 @@ import { prisma } from "@/lib/prisma";
 import { Navbar } from "@/components/layout/Navbar";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
-import { ResultSubmission } from "@/components/challenges/ResultSubmission";
 import { EvidenceSubmission } from "@/components/challenges/EvidenceSubmission";
 import { ChallengeChat } from "@/components/challenges/ChallengeChat";
 import { CancelChallengeButton } from "@/components/challenges/CancelChallengeButton";
 import { MatchTimer } from "@/components/challenges/MatchTimer";
+import { ReadyFlow } from "@/components/challenges/ReadyFlow";
+import { BattlePoller } from "@/components/challenges/BattlePoller";
 import { SUPPORTED_GAMES } from "@/types";
 import { GameIcon } from "@/components/games/GameIcon";
 import { GAME_CREDENTIALS } from "@/lib/gameCredentials";
-import { Trophy, Swords, DollarSign, Clock, CheckCircle, AlertTriangle, User } from "lucide-react";
+import { Trophy, Swords, Clock, CheckCircle, AlertTriangle, User, Ban, Loader2 } from "lucide-react";
+import { getSuspension } from "@/lib/ghost";
 
 export default async function ChallengeDetailPage({
   params,
@@ -52,11 +54,8 @@ export default async function ChallengeDetailPage({
   const pot      = challenge.stakeAmount * 2;
   const payout   = pot * 0.9;
 
-  const myResult = isCreator ? challenge.resultCreator : challenge.resultOpponent;
+  const suspension = await getSuspension(userId);
   const myEvidence = challenge.evidence.filter((e) => e.userId === userId);
-
-  const creatorEvidence  = challenge.evidence.filter((e) => e.userId === challenge.creatorId);
-  const opponentEvidence = challenge.evidence.filter((e) => e.userId === challenge.opponentId);
 
   return (
     <div className="flex flex-col min-h-screen bg-[#0a0a0f]">
@@ -64,7 +63,29 @@ export default async function ChallengeDetailPage({
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 py-8">
 
+        {/* Suspension banner */}
+        {suspension.suspended && (
+          <div className="mb-6 px-4 py-3 rounded-xl border border-[rgba(239,68,68,0.4)] bg-[rgba(239,68,68,0.07)] flex items-center gap-3">
+            <Ban className="w-5 h-5 text-[#ef4444] flex-shrink-0" />
+            <span className="text-sm text-[#f0f0f5]">
+              Your account is <strong className="text-[#ef4444]">suspended</strong> until{" "}
+              <strong className="text-[#ef4444]">
+                {suspension.until.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" })}
+              </strong>{" "}
+              due to repeated match ghosting. You cannot create or join new challenges until then.
+            </span>
+          </div>
+        )}
+
         {/* Status banner */}
+        {challenge.status === "WAITING_FOR_READY" && !isParticipant && (
+          <div className="mb-6 px-4 py-3 rounded-xl border border-[rgba(0,255,136,0.25)] bg-[rgba(0,255,136,0.05)] flex items-center gap-3">
+            <Clock className="w-5 h-5 text-[#00ff88] flex-shrink-0" />
+            <span className="text-sm text-[#f0f0f5]">
+              Both players are confirming their readiness for this match.
+            </span>
+          </div>
+        )}
         {challenge.status === "COMPLETED" && (
           <div className="mb-6 px-4 py-3 rounded-xl border border-[rgba(0,255,136,0.3)] bg-[rgba(0,255,136,0.06)] flex items-center gap-3">
             <CheckCircle className="w-5 h-5 text-[#00ff88] flex-shrink-0" />
@@ -200,13 +221,30 @@ export default async function ChallengeDetailPage({
           </div>
         )}
 
-        {/* ── Match timer (matchmaking challenges only) ── */}
-        {challenge.isMatchmaking && challenge.startedAt &&
+        {/* ── Ready flow (WAITING_FOR_READY, participants only) ── */}
+        {challenge.status === "WAITING_FOR_READY" && isParticipant && challenge.readyDeadline && challenge.opponent && (
+          <div className="mb-6">
+            <ReadyFlow
+              challengeId={challenge.id}
+              game={challenge.game}
+              isCreator={isCreator}
+              creatorReady={challenge.creatorReady}
+              opponentReady={challenge.opponentReady}
+              creatorUsername={challenge.creator.username}
+              opponentUsername={challenge.opponent.username}
+              readyDeadline={challenge.readyDeadline.toISOString()}
+            />
+          </div>
+        )}
+
+        {/* ── Match timer (all active / disputed challenges) ── */}
+        {challenge.startedAt &&
           (challenge.status === "ACTIVE" || challenge.status === "DISPUTED") && (
           <div className="mb-6">
             <MatchTimer
               challengeId={challenge.id}
               startedAt={challenge.startedAt.toISOString()}
+              game={challenge.game}
             />
           </div>
         )}
@@ -218,34 +256,24 @@ export default async function ChallengeDetailPage({
           </div>
         )}
 
-        {/* ── ACTIVE: result submission ── */}
-        {challenge.status === "ACTIVE" && isParticipant && (
-          <div className="mb-6">
-            {myResult ? (
-              <div className="glass rounded-xl p-5 border border-[rgba(0,255,136,0.2)] flex items-center gap-3">
-                <CheckCircle className="w-5 h-5 text-[#00ff88]" />
+        {/* ── ACTIVE: waiting for battle result ── */}
+        {challenge.status === "ACTIVE" && (
+          <>
+            {isParticipant && <BattlePoller challengeId={challenge.id} />}
+            <div className="mb-6">
+              <div className="glass rounded-xl p-5 border border-[rgba(0,255,136,0.15)] flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-[rgba(0,255,136,0.08)] border border-[rgba(0,255,136,0.2)] flex items-center justify-center flex-shrink-0">
+                  <Loader2 className="w-5 h-5 text-[#00ff88] animate-spin" />
+                </div>
                 <div>
-                  <div className="text-sm font-bold text-[#f0f0f5]">Result submitted</div>
-                  <div className="text-xs text-[#6b7280]">
-                    You said{" "}
-                    <strong className="text-[#00ff88]">
-                      {myResult === userId ? "you" : (isCreator ? challenge.opponent?.username : challenge.creator.username)} won
-                    </strong>.
-                    Waiting for the other player.
+                  <div className="text-sm font-bold text-[#f0f0f5]">Waiting for battle result…</div>
+                  <div className="text-xs text-[#6b7280] mt-0.5">
+                    Play your 1v1 match in Clash Royale. The result will be detected automatically.
                   </div>
                 </div>
               </div>
-            ) : (
-              <ResultSubmission
-                challengeId={challenge.id}
-                creatorId={challenge.creatorId}
-                opponentId={challenge.opponentId!}
-                creatorUsername={challenge.creator.username}
-                opponentUsername={challenge.opponent!.username}
-                currentUserId={userId}
-              />
-            )}
-          </div>
+            </div>
+          </>
         )}
 
         {/* ── DISPUTED: evidence submission ── */}

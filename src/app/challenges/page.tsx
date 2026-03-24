@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Navbar } from "@/components/layout/Navbar";
@@ -28,8 +28,23 @@ type Challenge = {
 };
 
 export default function ChallengesPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col min-h-screen bg-[#0a0a0f]">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 text-[#00ff88] animate-spin" />
+        </div>
+      </div>
+    }>
+      <ChallengesContent />
+    </Suspense>
+  );
+}
+
+function ChallengesContent() {
   const { data: session } = useSession();
-  const currentUserId = (session?.user as any)?.id as string | undefined;
+  const currentUserId = session?.user?.id;
   const router = useRouter();
   const searchParams = useSearchParams();
   const gameFilter  = searchParams.get("game")  ?? "";

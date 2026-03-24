@@ -156,7 +156,7 @@ export default function ProfilePage() {
     );
   }
 
-  const username = (session?.user as any)?.username ?? session?.user?.name ?? "";
+  const username = session?.user?.username ?? session?.user?.name ?? "";
 
   return (
     <div className="flex flex-col min-h-screen bg-[#0a0a0f]">

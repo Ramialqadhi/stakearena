@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/ghost-reminder",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/check-battles",
+      "schedule": "* * * * *"
+    }
+  ]
+}

@@ -22,7 +22,7 @@ export const MOCK_USER = {
     },
     {
       id: "ch-2",
-      game: "chess",
+      game: "clash-royale",
       stakeAmount: 25,
       status: "ACTIVE" as const,
       createdAt: new Date("2025-03-20"),
@@ -38,7 +38,7 @@ export const MOCK_USER = {
     },
     {
       id: "ch-4",
-      game: "fifa",
+      game: "clash-royale",
       stakeAmount: 25,
       status: "COMPLETED" as const,
       createdAt: new Date("2025-03-15"),
@@ -66,7 +66,7 @@ export const MOCK_CHALLENGES = [
   },
   {
     id: "ch-open-2",
-    game: "chess",
+    game: "clash-royale",
     stakeAmount: 25,
     status: "PENDING" as const,
     createdAt: new Date("2025-03-22T09:30:00"),
@@ -82,7 +82,7 @@ export const MOCK_CHALLENGES = [
   },
   {
     id: "ch-open-4",
-    game: "fifa",
+    game: "clash-royale",
     stakeAmount: 10,
     status: "PENDING" as const,
     createdAt: new Date("2025-03-21T22:00:00"),

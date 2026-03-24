@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
@@ -14,6 +14,20 @@ import { RecordingNoticeModal } from "@/components/challenges/RecordingNoticeMod
 const PRESET_AMOUNTS = [5, 15, 25];
 
 export default function NewChallengePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-col min-h-screen bg-[#0a0a0f]">
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-8 h-8 text-[#00ff88] animate-spin" />
+        </div>
+      </div>
+    }>
+      <NewChallengeContent />
+    </Suspense>
+  );
+}
+
+function NewChallengeContent() {
   const { data: session, status, update } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -45,7 +59,7 @@ export default function NewChallengePage() {
     return null;
   }
 
-  const balance = (session?.user as any)?.balance ?? 0;
+  const balance = session?.user?.balance ?? 0;
   const insufficientBalance = stakeAmount > 0 && stakeAmount > balance;
   const gameName = SUPPORTED_GAMES.find(g => g.id === selectedGame)?.name ?? selectedGame;
 

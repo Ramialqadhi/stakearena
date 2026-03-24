@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Clock, AlertTriangle } from "lucide-react";
+import { getGameTTL } from "@/lib/gameTimers";
 
-const MATCH_TTL_MS   = 2 * 60 * 60 * 1000; // 2 hours
-const WARNING_MS     = 30 * 60 * 1000;      // 30 minutes
+const WARNING_MS = 30 * 60 * 1000; // 30 minutes
 
 function formatTime(ms: number): string {
   if (ms <= 0) return "0:00:00";
@@ -19,13 +19,18 @@ function formatTime(ms: number): string {
 export function MatchTimer({
   challengeId,
   startedAt,
+  game,
 }: {
   challengeId: string;
   startedAt: string;
+  game: string;
 }) {
   const { update } = useSession();
   const router = useRouter();
-  const expiresAt = new Date(new Date(startedAt).getTime() + MATCH_TTL_MS);
+  const expiresAt = useMemo(
+    () => new Date(new Date(startedAt).getTime() + getGameTTL(game)),
+    [startedAt, game],
+  );
 
   const [remaining, setRemaining] = useState(() =>
     Math.max(0, expiresAt.getTime() - Date.now())
@@ -58,12 +63,17 @@ export function MatchTimer({
   }, [expiresAt, expired, handleExpire]);
 
   const isWarning = remaining <= WARNING_MS && remaining > 0;
-  const color = expired ? "#ef4444" : isWarning ? "#f59e0b" : "#00ff88";
+  const isUrgent  = remaining <= 10 * 60 * 1000 && remaining > 0; // under 10 min
+  const color = expired ? "#ef4444" : isWarning ? (isUrgent ? "#ef4444" : "#f59e0b") : "#00ff88";
 
   return (
     <div
-      className="glass rounded-xl px-4 py-3 border flex items-center gap-3"
-      style={{ borderColor: `${color}40`, backgroundColor: `${color}08` }}
+      className={`glass rounded-xl px-4 py-3 border flex items-center gap-3${isUrgent ? " animate-pulse" : ""}`}
+      style={{
+        borderColor: `${color}50`,
+        backgroundColor: `${color}08`,
+        boxShadow: isWarning ? `0 0 20px ${color}18` : "none",
+      }}
     >
       {isWarning || expired ? (
         <AlertTriangle className="w-4 h-4 flex-shrink-0" style={{ color }} />
@@ -74,8 +84,10 @@ export function MatchTimer({
         <div className="text-xs font-semibold" style={{ color }}>
           {expired
             ? "Match time expired — stake refunded"
+            : isUrgent
+            ? "🔴 Under 10 minutes — submit now!"
             : isWarning
-            ? "⚠️ Less than 30 minutes remaining!"
+            ? "⚠️ Under 30 minutes remaining!"
             : "Match time remaining"}
         </div>
         {!expired && (

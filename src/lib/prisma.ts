@@ -8,7 +8,7 @@ function createPrismaClient() {
   const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
   });
-  // Cast to any to avoid @types/pg version mismatch between top-level and adapter's bundled types
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const adapter = new PrismaPg(pool as any);
   return new PrismaClient({ adapter });
 }
@@ -25,7 +25,9 @@ const globalForPrisma = globalThis as unknown as {
 const cached = globalForPrisma.prisma;
 export const prisma =
   cached instanceof PrismaClient &&
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (cached as any).chatMessage &&
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (cached as any).matchmakingQueue
     ? cached
     : createPrismaClient();

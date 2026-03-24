@@ -19,8 +19,6 @@ interface DisputeChallenge {
   stakeAmount: number;
   creatorId: string;
   opponentId: string | null;
-  resultCreator: string | null;
-  resultOpponent: string | null;
   creator:  { id: string; username: string };
   opponent: { id: string; username: string } | null;
   evidence: EvidenceItem[];
@@ -54,13 +52,6 @@ export function DisputePanel({ challenge }: { challenge: DisputeChallenge }) {
     }
   }
 
-  const resultLabel = (userId: string | null) => {
-    if (!userId) return "Not submitted";
-    if (userId === challenge.creatorId)  return `→ ${challenge.creator.username}`;
-    if (userId === challenge.opponentId) return `→ ${challenge.opponent?.username}`;
-    return "Unknown";
-  };
-
   if (done) {
     return (
       <div className="p-4 rounded-xl border border-[rgba(0,255,136,0.2)] bg-[rgba(0,255,136,0.05)] text-[#00ff88] text-sm font-semibold text-center">
@@ -77,10 +68,7 @@ export function DisputePanel({ challenge }: { challenge: DisputeChallenge }) {
           <span className="font-bold text-[#f0f0f5]">{challenge.game}</span>
           <span className="text-[#6b7280] text-sm ml-2">· ${challenge.stakeAmount} stake · ${payout} payout</span>
         </div>
-        <div className="text-xs text-[#6b7280] space-x-4">
-          <span>Creator said: <span className="text-[#a1a1aa]">{resultLabel(challenge.resultCreator)}</span></span>
-          <span>Opponent said: <span className="text-[#a1a1aa]">{resultLabel(challenge.resultOpponent)}</span></span>
-        </div>
+        <div className="text-xs text-[#6b7280]">Review evidence below and award the win</div>
       </div>
 
       {/* Side-by-side evidence */}

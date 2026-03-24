@@ -64,6 +64,4 @@ export interface Game {
 
 export const SUPPORTED_GAMES: Game[] = [
   { id: "clash-royale", name: "Clash Royale", emoji: "⚔️", activeChallenges: 142, category: "Mobile" },
-  { id: "chess", name: "Chess", emoji: "♟️", activeChallenges: 89, category: "Strategy" },
-  { id: "fifa", name: "FIFA", emoji: "⚽", activeChallenges: 213, category: "Sports" },
 ];

@@ -14,9 +14,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
-        token.username = (user as any).username;
-        token.balance = (user as any).balance;
-        token.isAdmin = (user as any).email === process.env.ADMIN_EMAIL;
+        token.username = (user as { username?: string }).username;
+        token.balance  = (user as { balance?: number }).balance;
+        token.isAdmin = (user as { email?: string }).email === process.env.ADMIN_EMAIL;
       }
       if (trigger === "update") {
         const fresh = await prisma.user.findUnique({
@@ -33,10 +33,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     session({ session, token }) {
       if (token) {
-        session.user.id = token.id as string;
-        (session.user as any).username = token.username;
-        (session.user as any).balance = token.balance;
-        (session.user as any).isAdmin = token.isAdmin;
+        session.user.id       = (token.id       as string)  ?? "";
+        session.user.username = (token.username as string)  ?? "";
+        session.user.balance  = (token.balance  as number)  ?? 0;
+        session.user.isAdmin  = (token.isAdmin  as boolean) ?? false;
       }
       return session;
     },

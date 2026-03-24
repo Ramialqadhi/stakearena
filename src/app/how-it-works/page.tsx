@@ -172,7 +172,7 @@ export default async function HowItWorksPage() {
               const Icon = step.icon;
               const isEven = i % 2 === 1;
               const displayNumber = String(i + 1).padStart(2, "0");
-              const isWarning = (step as any).warning === true;
+              const isWarning = (step as { warning?: boolean }).warning === true;
               return (
                 <div
                   key={step.number}

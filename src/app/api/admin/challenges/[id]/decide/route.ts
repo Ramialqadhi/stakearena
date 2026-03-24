@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { executePayout } from "@/lib/payout";
+import { sendDisputeResolvedEmail, sendYouWonEmail } from "@/lib/email";
 
 function isAdmin(email?: string | null) {
   return email && email === process.env.ADMIN_EMAIL;
@@ -36,6 +37,31 @@ export async function POST(
     }
 
     const { payout } = await executePayout(id, winnerId);
+
+    // Email both players — fire-and-forget
+    const loserId = winnerId === challenge.creatorId ? challenge.opponentId! : challenge.creatorId;
+    const [winnerUser, loserUser] = await Promise.all([
+      prisma.user.findUnique({ where: { id: winnerId  }, select: { email: true, username: true } }),
+      prisma.user.findUnique({ where: { id: loserId   }, select: { email: true, username: true } }),
+    ]);
+    if (winnerUser?.email) {
+      sendDisputeResolvedEmail({
+        to: winnerUser.email, username: winnerUser.username ?? "Player",
+        winnerUsername: winnerUser.username ?? "Player",
+        game: challenge.game, payout, challengeId: id, isWinner: true,
+      }).catch(console.error);
+      sendYouWonEmail({
+        to: winnerUser.email, username: winnerUser.username ?? "Player",
+        game: challenge.game, payout, challengeId: id,
+      }).catch(console.error);
+    }
+    if (loserUser?.email) {
+      sendDisputeResolvedEmail({
+        to: loserUser.email, username: loserUser.username ?? "Player",
+        winnerUsername: winnerUser?.username ?? "Winner",
+        game: challenge.game, payout, challengeId: id, isWinner: false,
+      }).catch(console.error);
+    }
 
     return NextResponse.json({ success: true, winnerId, payout });
   } catch (error) {

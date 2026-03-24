@@ -17,9 +17,9 @@ export function Navbar() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const username = (session?.user as any)?.username ?? session?.user?.name;
-  const balance  = (session?.user as any)?.balance ?? 0;
-  const isAdmin  = (session?.user as any)?.isAdmin === true;
+  const username = session?.user?.username ?? session?.user?.name;
+  const balance  = session?.user?.balance ?? 0;
+  const isAdmin  = session?.user?.isAdmin === true;
 
   return (
     <nav className="glass sticky top-0 z-50 border-b border-[#1e1e2e]">

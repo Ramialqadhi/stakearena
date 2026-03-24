@@ -7,6 +7,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { Badge } from "@/components/ui/Badge";
 import { WithdrawalActions } from "@/components/admin/WithdrawalActions";
 import { DisputePanel } from "@/components/admin/DisputePanel";
+import { GhostStrikeActions } from "@/components/admin/GhostStrikeActions";
 import {
   ShieldCheck,
   Users,
@@ -35,6 +36,7 @@ export default async function AdminPage() {
   startOfWeek.setDate(startOfToday.getDate() - startOfToday.getDay());
 
   const [
+    ghostUsers,
     userCount,
     pendingWithdrawals,
     processedWithdrawals,
@@ -52,6 +54,11 @@ export default async function AdminPage() {
     newUsersToday,
     newUsersThisWeek,
   ] = await Promise.all([
+    prisma.user.findMany({
+      where: { OR: [{ ghostStrikes: { gt: 0 } }, { suspendedUntil: { gt: now } }] },
+      select: { id: true, username: true, email: true, ghostStrikes: true, suspendedUntil: true },
+      orderBy: [{ suspendedUntil: "desc" }, { ghostStrikes: "desc" }],
+    }),
     prisma.user.count(),
     prisma.withdrawalRequest.findMany({
       where: { status: "PENDING" },
@@ -194,6 +201,72 @@ export default async function AdminPage() {
               </div>
             ))}
           </div>
+        </div>
+
+        {/* Ghost Strikes */}
+        <div className="glass rounded-xl border border-[rgba(239,68,68,0.2)] overflow-hidden mb-8">
+          <div className="px-6 py-4 border-b border-[#1e1e2e] flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-[#ef4444]" />
+            <h2 className="text-lg font-bold text-[#f0f0f5]">Ghost Strikes & Suspensions</h2>
+            {ghostUsers.length > 0 && (
+              <span className="ml-auto text-xs font-bold bg-[rgba(239,68,68,0.15)] border border-[rgba(239,68,68,0.3)] text-[#ef4444] px-2 py-0.5 rounded-full">
+                {ghostUsers.length} flagged
+              </span>
+            )}
+          </div>
+          {ghostUsers.length === 0 ? (
+            <div className="px-6 py-10 text-center text-[#6b7280] text-sm">No ghost strikes or suspensions.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-[#1e1e2e]">
+                    {["User", "Email", "Ghost Strikes", "Suspended Until", "Actions"].map(h => (
+                      <th key={h} className="text-left px-4 py-3 text-xs font-semibold text-[#6b7280] uppercase tracking-wide whitespace-nowrap">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {ghostUsers.map(u => {
+                    const isSuspended = !!u.suspendedUntil && u.suspendedUntil > now;
+                    return (
+                      <tr key={u.id} className="border-b border-[#1a1a24] hover:bg-[rgba(255,255,255,0.02)] transition-colors">
+                        <td className="px-4 py-3 font-semibold text-[#f0f0f5] text-sm">{u.username}</td>
+                        <td className="px-4 py-3 text-xs text-[#6b7280]">{u.email}</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            {[1,2,3].map(n => (
+                              <div key={n} className="w-2.5 h-2.5 rounded-full" style={{
+                                background: n <= u.ghostStrikes ? "#ef4444" : "#1e1e2e",
+                                boxShadow: n <= u.ghostStrikes ? "0 0 6px rgba(239,68,68,0.6)" : "none",
+                              }} />
+                            ))}
+                            <span className="ml-1 text-xs font-bold text-[#ef4444]">{u.ghostStrikes}/3</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-xs">
+                          {isSuspended ? (
+                            <span className="text-[#ef4444] font-semibold">
+                              {u.suspendedUntil!.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}
+                            </span>
+                          ) : (
+                            <span className="text-[#6b7280]">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          <GhostStrikeActions
+                            userId={u.id}
+                            isSuspended={isSuspended}
+                            hasStrikes={u.ghostStrikes > 0}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
         {/* Disputes */}

@@ -20,6 +20,8 @@ model User {
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
   isAdmin            Boolean             @default(false)
+  ghostStrikes       Int                 @default(0)
+  suspendedUntil     DateTime?
   gameCredentials    String?             // JSON: {"clash-royale":"#ABC","chess":"user"}
   challengesCreated  Challenge[]         @relation("ChallengeCreator")
   challengesOpponent Challenge[]         @relation("ChallengeOpponent")
@@ -48,10 +50,15 @@ model Challenge {
   updatedAt           DateTime        @updatedAt
   startedAt           DateTime?
   isMatchmaking       Boolean         @default(false)
-  resultCreator       String?
-  resultOpponent      String?
-  creatorCredentials  String?
-  opponentCredentials String?
+  creatorCredentials        String?
+  opponentCredentials       String?
+  reminderSentAt            DateTime?
+  creatorReady              Boolean   @default(false)
+  opponentReady             Boolean   @default(false)
+  readyAt                   DateTime?
+  readyDeadline             DateTime?
+  readyReminderSentAt       DateTime?
+  readyUrgentReminderSentAt DateTime?
   creator             User            @relation("ChallengeCreator", fields: [creatorId], references: [id])
   opponent            User?           @relation("ChallengeOpponent", fields: [opponentId], references: [id])
   winner              User?           @relation("ChallengeWinner", fields: [winnerId], references: [id])
@@ -144,6 +151,7 @@ enum QueueStatus {
 
 enum ChallengeStatus {
   PENDING
+  WAITING_FOR_READY
   ACTIVE
   COMPLETED
   CANCELLED

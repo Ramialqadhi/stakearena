@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendWithdrawalProcessedEmail } from "@/lib/email";
 
 function isAdmin(email?: string | null) {
   return email && email === process.env.ADMIN_EMAIL;
@@ -34,6 +35,18 @@ export async function POST(
         adminNote: adminNote || "Approved by admin",
       },
     });
+
+    // Email the user — fire-and-forget
+    const user = await prisma.user.findUnique({
+      where:  { id: withdrawal.userId },
+      select: { email: true, username: true },
+    });
+    if (user?.email) {
+      sendWithdrawalProcessedEmail({
+        to: user.email, username: user.username ?? "Player",
+        amount: withdrawal.amount,
+      }).catch(console.error);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

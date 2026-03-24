@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { sendMatchFoundEmail } from "@/lib/email";
+import { READY_DEADLINE_MS } from "@/lib/gameTimers";
 
 export async function GET() {
   try {
@@ -34,7 +36,7 @@ export async function GET() {
 
       // Stale MATCHED entry — challenge is gone, completed, or cancelled.
       // Return idle so the user isn't phantom-redirected to an old match.
-      if (!challenge || challenge.status !== "ACTIVE") {
+      if (!challenge || !["ACTIVE", "WAITING_FOR_READY"].includes(challenge.status)) {
         return NextResponse.json({ status: "idle" });
       }
 
@@ -89,11 +91,11 @@ export async function GET() {
               opponentId:          session.user.id,
               game:                entry.game,
               stakeAmount:         entry.stakeAmount,
-              status:              "ACTIVE",
+              status:              "WAITING_FOR_READY",
               creatorPaid:         true,
               opponentPaid:        true,
-              startedAt:           now,
               isMatchmaking:       true,
+              readyDeadline:       new Date(now.getTime() + READY_DEADLINE_MS),
               creatorCredentials:  matchOpponent.credentials,
               opponentCredentials: entry.credentials,
             },
@@ -129,13 +131,33 @@ export async function GET() {
           return ch;
         });
 
+        // Email both players — fire-and-forget
+        const [selfUser, opponentDbUser] = await Promise.all([
+          prisma.user.findUnique({ where: { id: session.user.id }, select: { email: true, username: true } }),
+          prisma.user.findUnique({ where: { id: matchOpponent.userId }, select: { email: true, username: true } }),
+        ]);
+        if (selfUser?.email) {
+          sendMatchFoundEmail({
+            to: selfUser.email, username: selfUser.username ?? "Player",
+            opponentUsername: opponentDbUser?.username ?? "Opponent",
+            game: entry.game, stakeAmount: entry.stakeAmount, challengeId: challenge.id,
+          }).catch(console.error);
+        }
+        if (opponentDbUser?.email) {
+          sendMatchFoundEmail({
+            to: opponentDbUser.email, username: opponentDbUser.username ?? "Player",
+            opponentUsername: selfUser?.username ?? "Opponent",
+            game: entry.game, stakeAmount: entry.stakeAmount, challengeId: challenge.id,
+          }).catch(console.error);
+        }
+
         return NextResponse.json({
           status:           "matched",
           challengeId:      challenge.id,
           opponentUsername: matchOpponent.user.username,
         });
-      } catch (err: any) {
-        if (err.message !== "RACE_CONDITION") throw err;
+      } catch (err) {
+        if (err instanceof Error && err.message !== "RACE_CONDITION") throw err;
         // Another concurrent request matched this pair — fall through to "waiting"
       }
     }

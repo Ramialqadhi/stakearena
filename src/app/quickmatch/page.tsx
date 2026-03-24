@@ -8,14 +8,12 @@ import { Navbar } from "@/components/layout/Navbar";
 import { ChevronDown, X, Loader2, Users, Gamepad2 } from "lucide-react";
 
 /* ─── constants ─────────────────────────────────────────────────── */
-const STAKE  = 25;
-const PAYOUT = +(STAKE * 2 * 0.9).toFixed(2);
-const ORB    = 240; // px
+const STAKE_OPTIONS = [5, 15, 25] as const;
+type StakeOption = typeof STAKE_OPTIONS[number];
+const ORB = 240; // px
 
 const GAMES = [
   { id: "clash-royale", name: "Clash Royale", emoji: "⚔️" },
-  { id: "chess",        name: "Chess",        emoji: "♟️" },
-  { id: "fifa",         name: "FIFA",         emoji: "⚽" },
 ] as const;
 
 type GameId  = typeof GAMES[number]["id"];
@@ -220,13 +218,16 @@ function MatchFoundOverlay({
   opponentUsername,
   game,
   countdown,
+  stake,
 }: {
   myUsername: string;
   opponentUsername: string;
   game: GameId;
   countdown: number;
+  stake: StakeOption;
 }) {
   const gameInfo = GAMES.find(g => g.id === game);
+  const payout   = +(stake * 2 * 0.9).toFixed(2);
   const progress = ((3 - countdown) / 3) * 100;
 
   return (
@@ -274,7 +275,7 @@ function MatchFoundOverlay({
         letterSpacing: "0.22em", textTransform: "uppercase",
         animation: "match-slam-in 0.45s 0.08s cubic-bezier(0.175,0.885,0.32,1.275) both",
       }}>
-        {gameInfo?.emoji} {gameInfo?.name} · ${STAKE} stake · winner takes ${PAYOUT}
+        {gameInfo?.emoji} {gameInfo?.name} · ${stake} stake · winner takes ${payout}
       </div>
 
       {/* Players VS row */}
@@ -393,6 +394,7 @@ export default function QuickMatchPage() {
   const router = useRouter();
 
   const [game,             setGame]             = useState<GameId>("clash-royale");
+  const [stake,            setStake]            = useState<StakeOption>(5);
   const [phase,            setPhase]            = useState<Phase>("idle");
   const [counts,           setCounts]           = useState<Counts>({});
   const [expiry,           setExpiry]           = useState<string | null>(null);
@@ -400,14 +402,15 @@ export default function QuickMatchPage() {
   const [matchedId,        setMatchedId]        = useState<string | null>(null);
   const [opponentUsername, setOpponentUsername] = useState<string>("Opponent");
   const [matchCountdown,   setMatchCountdown]   = useState(3);
-  const [joining,          setJoining]          = useState(false);
-  const [error,            setError]            = useState("");
-  const [credGate,         setCredGate]         = useState(false);
+  const joining = false;
+  const [error,    setError]    = useState("");
+  const [credGate, setCredGate] = useState(false);
 
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const myUsername: string = (session?.user as any)?.username ?? session?.user?.name ?? "You";
-  const queueCount  = counts[game]?.[String(STAKE)] ?? 0;
+  const myUsername: string = session?.user?.username ?? session?.user?.name ?? "You";
+  const payout      = +(stake * 2 * 0.9).toFixed(2);
+  const queueCount  = counts[game]?.[String(stake)] ?? 0;
   const gameName    = GAMES.find(g => g.id === game)?.name ?? game;
   const isSearching = phase === "searching";
   const isMatched   = phase === "matched";
@@ -478,6 +481,7 @@ export default function QuickMatchPage() {
     fetch("/api/matchmaking/status").then(r => r.json()).then(d => {
       if (d.status === "waiting") {
         if (d.game) setGame(d.game as GameId);
+        if (d.stakeAmount && STAKE_OPTIONS.includes(d.stakeAmount)) setStake(d.stakeAmount as StakeOption);
         setExpiry(d.expiresAt);
         setPhase("searching");
       } else if (d.status === "matched" && d.challengeId) {
@@ -499,7 +503,7 @@ export default function QuickMatchPage() {
     try {
       const res  = await fetch("/api/matchmaking/join", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ game, stakeAmount: STAKE }),
+        body: JSON.stringify({ game, stakeAmount: stake }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -540,6 +544,7 @@ export default function QuickMatchPage() {
           opponentUsername={opponentUsername}
           game={game}
           countdown={matchCountdown}
+          stake={stake}
         />
       )}
 
@@ -579,8 +584,36 @@ export default function QuickMatchPage() {
                 Quick Match
               </h1>
               <p style={{ fontSize: 11, color: "#4b5563", marginTop: 4, letterSpacing: "0.12em", textTransform: "uppercase" }}>
-                stake $25 · instant · winner takes $45
+                instant matchmaking · 90% payout to winner
               </p>
+            </div>
+
+            {/* stake selector */}
+            <div style={{ display: "flex", gap: 8, paddingTop: 12, paddingBottom: 4, flexShrink: 0 }}>
+              {STAKE_OPTIONS.map(amt => {
+                const active = stake === amt;
+                return (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => { if (!isSearching && !isMatched) setStake(amt); }}
+                    disabled={isSearching || isMatched}
+                    style={{
+                      padding: "7px 18px", borderRadius: 24,
+                      fontSize: 13, fontWeight: 800,
+                      cursor: (isSearching || isMatched) ? "not-allowed" : "pointer",
+                      opacity: (isSearching || isMatched) ? 0.45 : 1,
+                      background: active ? "rgba(0,255,136,0.12)" : "rgba(255,255,255,0.04)",
+                      border: active ? "1px solid rgba(0,255,136,0.6)" : "1px solid rgba(255,255,255,0.08)",
+                      color: active ? "#00ff88" : "#6b7280",
+                      transition: "all 0.18s",
+                      letterSpacing: "0.04em",
+                    }}
+                  >
+                    ${amt}
+                  </button>
+                );
+              })}
             </div>
 
             {/* orb zone */}
@@ -655,7 +688,7 @@ export default function QuickMatchPage() {
                     <>
                       <span style={{ fontSize: "clamp(1.3rem,3.5vw,1.9rem)", fontWeight: 900, color: "#00ff88", letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>FIND</span>
                       <span style={{ fontSize: "clamp(1.3rem,3.5vw,1.9rem)", fontWeight: 900, color: "#00ff88", letterSpacing: "0.1em", textTransform: "uppercase", lineHeight: 1 }}>MATCH</span>
-                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,255,136,0.5)", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 8 }}>$25 stake</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(0,255,136,0.5)", letterSpacing: "0.14em", textTransform: "uppercase", marginTop: 8 }}>${stake} STAKE</span>
                     </>
                   )}
                 </button>
@@ -722,7 +755,7 @@ export default function QuickMatchPage() {
                   background: "rgba(8,8,16,0.75)", border: "1px solid rgba(255,255,255,0.06)",
                   backdropFilter: "blur(10px)", fontSize: 13, color: "#6b7280",
                 }}>
-                  <span>Winner takes <strong style={{ color: "#00ff88" }}>${PAYOUT}</strong></span>
+                  <span>Winner takes <strong style={{ color: "#00ff88" }}>${payout}</strong></span>
                   <span style={{ width: 1, height: 16, background: "#2a2a3a" }} />
                   <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
                     <Users size={14} color="#00ff88" />

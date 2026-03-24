@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { stripe } from "@/lib/stripe";
 
-const PRESET_AMOUNTS = [10, 25, 50, 100, 250, 500];
 
 export async function POST(request: NextRequest) {
   try {

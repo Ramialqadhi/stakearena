@@ -15,6 +15,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -29,6 +30,11 @@ export default function RegisterPage() {
 
     if (password.length < 8) {
       setError("Password must be at least 8 characters.");
+      return;
+    }
+
+    if (!agreedToTerms) {
+      setError("You must agree to the Terms of Service and confirm you are 18 or older.");
       return;
     }
 
@@ -135,11 +141,48 @@ export default function RegisterPage() {
               autoComplete="new-password"
             />
 
+            {/* Terms & age confirmation */}
+            <label className="flex items-start gap-3 cursor-pointer group mt-1">
+              <div className="relative flex-shrink-0 mt-0.5">
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  className="sr-only"
+                />
+                <div
+                  className="w-5 h-5 rounded-md border-2 flex items-center justify-center transition-all"
+                  style={{
+                    borderColor: agreedToTerms ? "#00ff88" : "#2a2a3a",
+                    background: agreedToTerms ? "rgba(0,255,136,0.15)" : "transparent",
+                  }}
+                >
+                  {agreedToTerms && (
+                    <svg width="11" height="9" viewBox="0 0 11 9" fill="none">
+                      <path d="M1 4L4 7.5L10 1" stroke="#00ff88" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+              </div>
+              <span className="text-xs text-[#6b7280] leading-relaxed group-hover:text-[#a1a1aa] transition-colors">
+                I agree to the{" "}
+                <Link href="/terms" target="_blank" className="text-[#00ff88] hover:text-[#00cc6a] font-semibold transition-colors">
+                  Terms of Service
+                </Link>
+                {" "}and{" "}
+                <Link href="/privacy" target="_blank" className="text-[#00ff88] hover:text-[#00cc6a] font-semibold transition-colors">
+                  Privacy Policy
+                </Link>
+                , and confirm that I am{" "}
+                <strong className="text-[#f0f0f5]">18 years of age or older</strong>.
+              </span>
+            </label>
+
             <Button
               type="submit"
               variant="primary"
               size="md"
-              disabled={loading}
+              disabled={loading || !agreedToTerms}
               className="mt-2 w-full font-bold"
             >
               {loading ? (
@@ -163,10 +206,6 @@ export default function RegisterPage() {
             </Link>
           </p>
 
-          <p className="text-center text-xs text-[#6b7280] mt-4">
-            By creating an account you agree to our{" "}
-            <Link href="#" className="text-[#a1a1aa] hover:text-[#f0f0f5]">Terms of Service</Link>
-          </p>
         </div>
       </div>
     </div>

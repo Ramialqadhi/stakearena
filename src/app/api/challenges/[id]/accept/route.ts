@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getDisputeBlock } from "@/lib/disputeBlock";
+import { sendChallengeAcceptedEmail } from "@/lib/email";
+import { getSuspension } from "@/lib/ghost";
+import { READY_DEADLINE_MS } from "@/lib/gameTimers";
 
 export async function POST(
   _req: NextRequest,
@@ -14,6 +17,15 @@ export async function POST(
     }
 
     const { id } = await params;
+
+    const suspension = await getSuspension(session.user.id);
+    if (suspension.suspended) {
+      const until = suspension.until.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+      return NextResponse.json(
+        { error: `Your account is suspended until ${until} due to repeated match ghosting.`, suspended: true, until: suspension.until.toISOString() },
+        { status: 403 }
+      );
+    }
 
     const block = await getDisputeBlock(session.user.id);
     if (block.blocked) {
@@ -59,7 +71,8 @@ export async function POST(
         data: {
           opponentId:          session.user.id,
           opponentPaid:        true,
-          status:              "ACTIVE",
+          status:              "WAITING_FOR_READY",
+          readyDeadline:       new Date(Date.now() + READY_DEADLINE_MS),
           opponentCredentials: credentials,
         },
       });
@@ -78,6 +91,22 @@ export async function POST(
         },
       });
     });
+
+    // Email creator — fire-and-forget
+    const [creator, opponent] = await Promise.all([
+      prisma.user.findUnique({ where: { id: challenge.creatorId }, select: { email: true, username: true } }),
+      prisma.user.findUnique({ where: { id: session.user.id }, select: { username: true } }),
+    ]);
+    if (creator?.email) {
+      sendChallengeAcceptedEmail({
+        to: creator.email,
+        creatorUsername:  creator.username  ?? "Player",
+        opponentUsername: opponent?.username ?? "Opponent",
+        game:        challenge.game,
+        stakeAmount: challenge.stakeAmount,
+        challengeId: id,
+      }).catch(console.error);
+    }
 
     return NextResponse.json({ success: true, challengeId: id });
   } catch (error) {

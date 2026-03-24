@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getDisputeBlock } from "@/lib/disputeBlock";
+import { sendMatchFoundEmail } from "@/lib/email";
+import { getSuspension } from "@/lib/ghost";
+import { READY_DEADLINE_MS } from "@/lib/gameTimers";
 
 const QUEUE_TTL_MS = 2 * 60 * 1000; // 2 minutes
 
@@ -10,6 +13,15 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const suspension = await getSuspension(session.user.id);
+    if (suspension.suspended) {
+      const until = suspension.until.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+      return NextResponse.json(
+        { error: `Your account is suspended until ${until} due to repeated match ghosting.`, suspended: true, until: suspension.until.toISOString() },
+        { status: 403 }
+      );
     }
 
     const block = await getDisputeBlock(session.user.id);
@@ -101,11 +113,11 @@ export async function POST(request: NextRequest) {
             opponentId:          session.user.id,
             game,
             stakeAmount,
-            status:              "ACTIVE",
+            status:              "WAITING_FOR_READY",
             creatorPaid:         true,
             opponentPaid:        true,
-            startedAt:           now,
             isMatchmaking:       true,
+            readyDeadline:       new Date(now.getTime() + READY_DEADLINE_MS),
             creatorCredentials:  opponent.credentials,
             opponentCredentials: credentials.trim(),
           },
@@ -144,6 +156,26 @@ export async function POST(request: NextRequest) {
 
           return challenge;
       });
+
+      // Email both players — fire-and-forget
+      const [currentUser, opponentUser] = await Promise.all([
+        prisma.user.findUnique({ where: { id: session.user.id }, select: { email: true, username: true } }),
+        prisma.user.findUnique({ where: { id: opponent.userId }, select: { email: true, username: true } }),
+      ]);
+      if (currentUser?.email) {
+        sendMatchFoundEmail({
+          to: currentUser.email, username: currentUser.username ?? "Player",
+          opponentUsername: opponentUser?.username ?? "Opponent",
+          game, stakeAmount, challengeId: result.id,
+        }).catch(console.error);
+      }
+      if (opponentUser?.email) {
+        sendMatchFoundEmail({
+          to: opponentUser.email, username: opponentUser.username ?? "Player",
+          opponentUsername: currentUser?.username ?? "Opponent",
+          game, stakeAmount, challengeId: result.id,
+        }).catch(console.error);
+      }
 
       return NextResponse.json({
         matched:          true,

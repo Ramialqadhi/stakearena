@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-
-const MATCH_TTL_MS = 2 * 60 * 60 * 1000; // 2 hours
+import { getGameTTL } from "@/lib/gameTimers";
 
 export async function POST(
   _req: NextRequest,
@@ -31,14 +30,12 @@ export async function POST(
     if (challenge.status !== "ACTIVE") {
       return NextResponse.json({ error: "Challenge is not active" }, { status: 400 });
     }
-    if (!challenge.isMatchmaking) {
-      return NextResponse.json({ error: "Not a matchmaking challenge" }, { status: 400 });
-    }
     if (!challenge.startedAt) {
       return NextResponse.json({ error: "No start time recorded" }, { status: 400 });
     }
 
-    const expiresAt = new Date(challenge.startedAt.getTime() + MATCH_TTL_MS);
+    const matchTTL  = getGameTTL(challenge.game);
+    const expiresAt = new Date(challenge.startedAt.getTime() + matchTTL);
     if (new Date() < expiresAt) {
       return NextResponse.json({ error: "Match has not expired yet" }, { status: 400 });
     }

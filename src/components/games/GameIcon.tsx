@@ -39,52 +39,6 @@ function ShieldSwordsIcon({ s }: { s: number }) {
   );
 }
 
-function KingPieceIcon({ s }: { s: number }) {
-  return (
-    <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
-      {/* Cross */}
-      <line x1="12" y1="2" x2="12" y2="8" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round"/>
-      <line x1="9" y1="4.5" x2="15" y2="4.5" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round"/>
-      {/* Head */}
-      <path d="M8.5 9C8.5 7.5 10 6.5 12 6.5C14 6.5 15.5 7.5 15.5 9C15.5 10.5 14 11.5 12 11.5C10 11.5 8.5 10.5 8.5 9Z"
-        stroke="#fbbf24" strokeWidth="1.3" fill="rgba(251,191,36,0.1)"
-      />
-      {/* Body */}
-      <path d="M9 11.5L8 17H16L15 11.5" stroke="#fbbf24" strokeWidth="1.3" strokeLinejoin="round" fill="rgba(251,191,36,0.08)"/>
-      {/* Base */}
-      <path d="M7 17L6 21H18L17 17" stroke="#fbbf24" strokeWidth="1.3" strokeLinejoin="round" fill="rgba(251,191,36,0.12)"/>
-    </svg>
-  );
-}
-
-function SoccerBallIcon({ s }: { s: number }) {
-  const cx = 12, cy = 12, r = 8.5;
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const angles = [90, 162, 234, 306, 18];
-  const penta = angles.map((a) => ({
-    x: cx + r * 0.52 * Math.cos(toRad(a - 90)),
-    y: cy + r * 0.52 * Math.sin(toRad(a - 90)),
-  }));
-  const pentaPath = penta.map((p, i) => `${i === 0 ? "M" : "L"}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(" ") + "Z";
-  return (
-    <svg width={s} height={s} viewBox="0 0 24 24" fill="none">
-      <circle cx="12" cy="12" r={r} stroke="rgba(255,255,255,0.85)" strokeWidth="1.4" fill="rgba(255,255,255,0.06)"/>
-      <path d={pentaPath} stroke="rgba(255,255,255,0.8)" strokeWidth="0.9" fill="rgba(0,0,0,0.2)"/>
-      {penta.map((pt, i) => {
-        const angle = Math.atan2(pt.y - cy, pt.x - cx);
-        return (
-          <line key={i}
-            x1={pt.x.toFixed(1)} y1={pt.y.toFixed(1)}
-            x2={(cx + r * Math.cos(angle)).toFixed(1)}
-            y2={(cy + r * Math.sin(angle)).toFixed(1)}
-            stroke="rgba(255,255,255,0.4)" strokeWidth="0.8"
-          />
-        );
-      })}
-    </svg>
-  );
-}
-
 // ─── Background Patterns ─────────────────────────────────────────────────────
 
 function ClashPattern() {
@@ -95,34 +49,6 @@ function ClashPattern() {
       <polygon points="6,46 10,53 6,60 2,53" fill="rgba(139,92,246,0.12)"/>
       <polygon points="56,42 60,49 56,56 52,49" fill="rgba(99,102,241,0.16)"/>
       <polygon points="32,0 35,5 32,10 29,5" fill="rgba(167,139,250,0.1)"/>
-    </svg>
-  );
-}
-
-function ChessPattern() {
-  return (
-    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 64 64" preserveAspectRatio="xMidYMid slice">
-      <rect x="0" y="0" width="8" height="8" fill="rgba(251,191,36,0.12)"/>
-      <rect x="8" y="8" width="8" height="8" fill="rgba(251,191,36,0.08)"/>
-      <rect x="16" y="0" width="8" height="8" fill="rgba(251,191,36,0.08)"/>
-      <rect x="0" y="16" width="8" height="8" fill="rgba(251,191,36,0.08)"/>
-      <rect x="48" y="48" width="8" height="8" fill="rgba(251,191,36,0.1)"/>
-      <rect x="56" y="56" width="8" height="8" fill="rgba(251,191,36,0.08)"/>
-      <rect x="40" y="56" width="8" height="8" fill="rgba(251,191,36,0.06)"/>
-      <rect x="56" y="40" width="8" height="8" fill="rgba(251,191,36,0.06)"/>
-    </svg>
-  );
-}
-
-function FIFAPattern() {
-  return (
-    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 64 64" preserveAspectRatio="xMidYMid slice">
-      {/* Field center circle */}
-      <circle cx="32" cy="32" r="20" stroke="rgba(255,255,255,0.08)" strokeWidth="1" fill="none"/>
-      {/* Center spot */}
-      <circle cx="32" cy="32" r="2" fill="rgba(255,255,255,0.1)"/>
-      {/* Center line */}
-      <line x1="0" y1="32" x2="64" y2="32" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
     </svg>
   );
 }
@@ -142,18 +68,6 @@ const THEMES: Record<string, GameTheme> = {
     glow: "rgba(139,92,246,0.35)",
     Icon: ({ s }) => <ShieldSwordsIcon s={s} />,
     Pattern: ClashPattern,
-  },
-  chess: {
-    gradient: "linear-gradient(135deg, #1c1917 0%, #3d3530 50%, #1c1917 100%)",
-    glow: "rgba(251,191,36,0.3)",
-    Icon: ({ s }) => <KingPieceIcon s={s} />,
-    Pattern: ChessPattern,
-  },
-  fifa: {
-    gradient: "linear-gradient(135deg, #052e16 0%, #15803d 55%, #064e3b 100%)",
-    glow: "rgba(74,222,128,0.3)",
-    Icon: ({ s }) => <SoccerBallIcon s={s} />,
-    Pattern: FIFAPattern,
   },
 };
 
@@ -175,8 +89,6 @@ const FALLBACK_THEME: GameTheme = {
 
 export const GAME_GRADIENTS: Record<string, string> = {
   "clash-royale": "linear-gradient(135deg, #1e1b4b 0%, #3730a3 45%, #4c1d95 100%)",
-  chess:          "linear-gradient(135deg, #1c1917 0%, #3d3530 50%, #1c1917 100%)",
-  fifa:           "linear-gradient(135deg, #052e16 0%, #15803d 55%, #064e3b 100%)",
 };
 
 // ─── Component ───────────────────────────────────────────────────────────────

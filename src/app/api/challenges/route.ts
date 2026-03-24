@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getDisputeBlock } from "@/lib/disputeBlock";
+import { getSuspension } from "@/lib/ghost";
 
 export async function GET(request: NextRequest) {
   try {
@@ -35,6 +36,15 @@ export async function POST(request: NextRequest) {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const suspension = await getSuspension(session.user.id);
+    if (suspension.suspended) {
+      const until = suspension.until.toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZoneName: "short" });
+      return NextResponse.json(
+        { error: `Your account is suspended until ${until} due to repeated match ghosting.`, suspended: true, until: suspension.until.toISOString() },
+        { status: 403 }
+      );
     }
 
     const block = await getDisputeBlock(session.user.id);
