@@ -3,15 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { findBattleResult, normalizeTag } from "@/lib/clashroyale";
 import { getGameTTL } from "@/lib/gameTimers";
 import { sendYouWonEmail } from "@/lib/email";
+import { auth } from "@/lib/auth";
 
-export async function GET(req: NextRequest) {
-  const authHeader = req.headers.get("authorization");
-  if (
-    process.env.CRON_SECRET &&
-    authHeader !== `Bearer ${process.env.CRON_SECRET}`
-  ) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+async function runCheckBattles() {
 
   const now = new Date();
 
@@ -140,5 +134,26 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  return NextResponse.json({ checked: challenges.length, battlesFound, expired });
+  return { checked: challenges.length, battlesFound, expired };
+}
+
+/** Vercel cron — requires Bearer CRON_SECRET */
+export async function GET(req: NextRequest) {
+  const cronSecret = (process.env.CRON_SECRET ?? "").trim();
+  const authHeader = req.headers.get("authorization");
+  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const result = await runCheckBattles();
+  return NextResponse.json(result);
+}
+
+/** Manual admin trigger — requires active admin session */
+export async function POST() {
+  const session = await auth();
+  if (!session?.user?.isAdmin) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const result = await runCheckBattles();
+  return NextResponse.json(result);
 }
