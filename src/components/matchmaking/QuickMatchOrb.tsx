@@ -4,11 +4,10 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useSession } from "@/hooks/useSession";
 import { useRouter } from "next/navigation";
 import { SUPPORTED_GAMES } from "@/types";
-import { RecordingNoticeModal } from "@/components/challenges/RecordingNoticeModal";
 import { ChevronDown, X, CheckCircle, Loader2, Users, AlertCircle, Gamepad2 } from "lucide-react";
 import Link from "next/link";
 
-type Phase = "idle" | "notice" | "searching" | "matched" | "expired";
+type Phase = "idle" | "searching" | "matched" | "expired";
 type Counts = Record<string, Record<string, number>>;
 
 const STAKE  = 25;
@@ -243,13 +242,6 @@ export function QuickMatchOrb() {
     // Takes full height of parent — orb gets flex-1, bottom section is shrink-0
     <div className="flex flex-col items-center w-full h-full">
 
-      {phase === "notice" && (
-        <RecordingNoticeModal
-          onConfirm={() => { setPhase("idle"); joinQueue(); }}
-          onCancel={() => setPhase("idle")}
-        />
-      )}
-
       {/* ── Orb zone — fills remaining height ─────────────────── */}
       <div className="flex-1 min-h-0 flex items-center justify-center w-full overflow-hidden">
         {/* Fixed-size ring container centered in the flex zone */}
@@ -298,7 +290,7 @@ export function QuickMatchOrb() {
             onClick={() => {
               if (isSearching || isMatched) return;
               if (!session?.user) { router.push("/login"); return; }
-              if (phase === "idle") setPhase("notice");
+              if (phase === "idle") joinQueue();
             }}
             disabled={isSearching || isMatched || isJoining}
             className={`relative z-10 rounded-full flex flex-col items-center justify-center gap-1 select-none

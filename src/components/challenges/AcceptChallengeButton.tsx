@@ -6,10 +6,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Loader2, Swords, AlertCircle, ShieldAlert, Gamepad2 } from "lucide-react";
-import { RecordingNoticeModal } from "@/components/challenges/RecordingNoticeModal";
 import { SUPPORTED_GAMES } from "@/types";
-
-type Step = "idle" | "notice";
 
 export function AcceptChallengeButton({
   challengeId,
@@ -22,7 +19,6 @@ export function AcceptChallengeButton({
 }) {
   const { update } = useSession();
   const router = useRouter();
-  const [step,         setStep]         = useState<Step>("idle");
   const [loading,      setLoading]      = useState(false);
   const [error,        setError]        = useState("");
   const [credGate,     setCredGate]     = useState(false);
@@ -101,37 +97,28 @@ export function AcceptChallengeButton({
   }
 
   return (
-    <>
-      {step === "notice" && (
-        <RecordingNoticeModal
-          onConfirm={() => { setStep("idle"); handleAccept(); }}
-          onCancel={() => setStep("idle")}
-        />
+    <div className="flex flex-col gap-3">
+      {error && (
+        <div className="flex items-center gap-2 p-3 rounded-lg bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.3)] text-red-400 text-sm">
+          <AlertCircle className="w-4 h-4 flex-shrink-0" />
+          {error}
+        </div>
       )}
 
-      <div className="flex flex-col gap-3">
-        {error && (
-          <div className="flex items-center gap-2 p-3 rounded-lg bg-[rgba(239,68,68,0.1)] border border-[rgba(239,68,68,0.3)] text-red-400 text-sm">
-            <AlertCircle className="w-4 h-4 flex-shrink-0" />
-            {error}
-          </div>
-        )}
-
-        <Button
-          variant="primary"
-          size="lg"
-          className="w-full font-black text-lg"
-          onClick={() => setStep("notice")}
-          disabled={loading}
-          pulse
-        >
+      <Button
+        variant="primary"
+        size="lg"
+        className="w-full font-black text-lg"
+        onClick={handleAccept}
+        disabled={loading}
+        pulse
+      >
           {loading ? (
-            <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Accepting...</>
-          ) : (
-            <><Swords className="w-5 h-5 mr-2" />Accept — Stake ${stakeAmount.toFixed(2)}</>
-          )}
-        </Button>
-      </div>
-    </>
+          <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Accepting...</>
+        ) : (
+          <><Swords className="w-5 h-5 mr-2" />Accept — Stake ${stakeAmount.toFixed(2)}</>
+        )}
+      </Button>
+    </div>
   );
 }

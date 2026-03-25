@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/Button";
 import { SUPPORTED_GAMES } from "@/types";
 import { GameIcon } from "@/components/games/GameIcon";
 import { Loader2, Share2, Copy, Check, ArrowLeft, AlertCircle, ShieldAlert, Gamepad2 } from "lucide-react";
-import { RecordingNoticeModal } from "@/components/challenges/RecordingNoticeModal";
 
 const PRESET_AMOUNTS = [5, 15, 25];
 
@@ -51,7 +50,6 @@ function NewChallengeContent() {
   const [credGate, setCredGate] = useState(false);
   const [shareCode, setShareCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const [showRecordingNotice, setShowRecordingNotice] = useState(true);
   const [disputeBlock, setDisputeBlock] = useState<{ blocked: boolean; challengeId: string | null } | null>(null);
 
   if (status === "unauthenticated") {
@@ -99,18 +97,6 @@ function NewChallengeContent() {
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  }
-
-  if (showRecordingNotice) {
-    return (
-      <div className="flex flex-col min-h-screen bg-[#0a0a0f]">
-        <Navbar />
-        <RecordingNoticeModal
-          onConfirm={() => setShowRecordingNotice(false)}
-          onCancel={() => router.push("/dashboard")}
-        />
-      </div>
-    );
   }
 
   if (disputeBlock?.blocked) {

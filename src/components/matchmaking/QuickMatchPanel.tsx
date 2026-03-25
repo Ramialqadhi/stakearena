@@ -8,13 +8,12 @@ import { GAME_CREDENTIALS } from "@/lib/gameCredentials";
 import { GameIcon } from "@/components/games/GameIcon";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { RecordingNoticeModal } from "@/components/challenges/RecordingNoticeModal";
 import {
   Zap, Users, X, CheckCircle, AlertCircle, User, Clock, Loader2,
 } from "lucide-react";
 import Link from "next/link";
 
-type Step = "idle" | "notice" | "credentials" | "waiting" | "matched" | "expired" | "error";
+type Step = "idle" | "credentials" | "waiting" | "matched" | "expired" | "error";
 
 const STAKES = [5, 15, 25] as const;
 type Counts = Record<string, Record<string, number>>;
@@ -346,30 +345,22 @@ export function QuickMatchPanel({ fullPage = false }: { fullPage?: boolean }) {
 
   // ── Idle ──────────────────────────────────────────────────────────
   return (
-    <>
-      {step === "notice" && (
-        <RecordingNoticeModal
-          onConfirm={() => setStep("credentials")}
-          onCancel={() => setStep("idle")}
-        />
-      )}
-      <QuickMatchShell
-        game={game} setGame={(g) => { setGame(g); setCredentials(""); }}
-        stake={stake} setStake={setStake}
-        counts={counts}
+    <QuickMatchShell
+      game={game} setGame={(g) => { setGame(g); setCredentials(""); }}
+      stake={stake} setStake={setStake}
+      counts={counts}
+    >
+      <Button
+        variant="primary"
+        size="lg"
+        pulse
+        className="w-full font-black text-base"
+        onClick={() => setStep("credentials")}
       >
-        <Button
-          variant="primary"
-          size="lg"
-          pulse
-          className="w-full font-black text-base"
-          onClick={() => setStep("notice")}
-        >
           <Zap className="w-5 h-5 mr-2" />
           Find Match — ${stake}
         </Button>
       </QuickMatchShell>
-    </>
   );
 }
 
