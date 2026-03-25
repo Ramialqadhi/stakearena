@@ -141,7 +141,7 @@ export default async function HowItWorksPage() {
           <div className="absolute inset-0 grid-pattern opacity-20" />
           <div className="relative max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[rgba(0,255,136,0.25)] bg-[rgba(0,255,136,0.06)] text-[#00ff88] text-xs font-semibold mb-6 tracking-wide uppercase">
-              Clash Royale · Real Money · Auto Verified
+              Skill · Compete · Dominate
             </div>
             <h1 className="text-4xl sm:text-5xl font-black text-[#f0f0f5] mb-5 leading-tight">
               Skill-based wagering,{" "}
