@@ -16,9 +16,6 @@ import {
   ArrowRight,
   Swords,
   Shield,
-  Lock,
-  Video,
-  AlertTriangle,
 } from "lucide-react";
 
 const STEPS = [
@@ -75,27 +72,16 @@ const STEPS = [
   },
   {
     number: "06",
-    icon: Video,
-    title: "Record Your Gameplay",
-    description:
-      "You are required to record your screen or gameplay for the full duration of every match. Recordings may be requested as evidence in a dispute — failure to provide one may result in the match being awarded to your opponent.",
-    color: "#f59e0b",
-    glow: "rgba(245,158,11,0.18)",
-    border: "rgba(245,158,11,0.45)",
-    warning: true,
-  },
-  {
-    number: "07",
     icon: Trophy,
     title: "Play & Win — Auto Verified",
     description:
-      "Play your match in Clash Royale. Our system automatically detects the result via the Clash Royale API and instantly pays the winner. No manual submissions, no disputes over results — just pure skill.",
+      "Play your match. Our system automatically detects the result and instantly pays the winner. No manual submissions — just pure skill.",
     color: "#00ff88",
     glow: "rgba(0,255,136,0.2)",
     border: "rgba(0,255,136,0.3)",
   },
   {
-    number: "08",
+    number: "07",
     icon: ArrowDownToLine,
     title: "Withdraw Your Winnings",
     description:
@@ -115,12 +101,12 @@ const TRUST_ITEMS = [
   {
     icon: Zap,
     title: "Auto Result Detection",
-    body: "Results are verified automatically via the Clash Royale API. The winner is paid instantly with no manual submissions required.",
+    body: "Our system automatically detects match results and pays the winner instantly. No manual submissions required.",
   },
   {
-    icon: Lock,
-    title: "Dispute Protection",
-    body: "In rare cases where the system cannot verify a result, our admin team reviews the evidence and makes a fair ruling within 24 hours.",
+    icon: Trophy,
+    title: "Instant Payouts",
+    body: "Winners receive 90% of the pot directly to their wallet the moment a match concludes. Fast, fair, automatic.",
   },
 ];
 
@@ -195,15 +181,10 @@ export default async function HowItWorksPage() {
               {steps.map((step, i) => {
                 const Icon = step.icon;
                 const displayNumber = String(i + 1).padStart(2, "0");
-                const isWarning = step.warning === true;
                 return (
                   <div
                     key={step.number}
-                    className={`relative flex items-start gap-5 rounded-2xl p-5 sm:p-6 border transition-all duration-200 ${
-                      isWarning
-                        ? "bg-[rgba(245,158,11,0.04)] hover:bg-[rgba(245,158,11,0.07)]"
-                        : "glass hover:bg-[rgba(255,255,255,0.02)]"
-                    }`}
+                    className="relative flex items-start gap-5 rounded-2xl p-5 sm:p-6 border transition-all duration-200 glass hover:bg-[rgba(255,255,255,0.02)]"
                     style={{ borderColor: step.border, boxShadow: `0 0 20px ${step.glow}` }}
                   >
                     {/* Icon */}
@@ -228,12 +209,6 @@ export default async function HowItWorksPage() {
                         <h3 className="text-base sm:text-lg font-black text-[#f0f0f5]">
                           {step.title}
                         </h3>
-                        {isWarning && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-[rgba(245,158,11,0.12)] border border-[rgba(245,158,11,0.4)] text-[#f59e0b] uppercase tracking-wide">
-                            <AlertTriangle className="w-3 h-3" />
-                            Mandatory
-                          </span>
-                        )}
                       </div>
                       <p className="text-sm leading-relaxed text-[#a1a1aa]">
                         {step.description}
