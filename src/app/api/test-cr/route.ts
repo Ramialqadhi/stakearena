@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { normalizeTag } from "@/lib/clashroyale";
 
-const CR_API = "https://api.clashroyale.com/v1";
+const CR_API = "https://proxy.royaleapi.dev/v1";
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;

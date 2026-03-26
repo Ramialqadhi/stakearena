@@ -1,4 +1,4 @@
-const CR_API = "https://api.clashroyale.com/v1";
+const CR_API = "https://proxy.royaleapi.dev/v1";
 
 /** Normalize a player tag: always uppercase, always starts with #, no spaces */
 export function normalizeTag(tag: string): string {
