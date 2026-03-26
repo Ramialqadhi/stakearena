@@ -3,10 +3,6 @@
     {
       "path": "/api/cron/ghost-reminder",
       "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/check-battles",
-      "schedule": "0 0 * * *"
     }
   ]
 }
